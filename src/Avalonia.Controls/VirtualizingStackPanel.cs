@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Specialized;
+using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Layout;
@@ -93,6 +94,11 @@ namespace Avalonia.Controls
         protected override Size ArrangeOverride(Size finalSize)
         {
             _availableSpace = finalSize;
+            if ((Controller is ItemVirtualizerSmooth) || (Controller is ItemVirtualizerLogical) || (Controller is ItemVirtualizerGroup))
+            {
+                Controller?.UpdateControls();
+                return finalSize;
+            }
             _canBeRemoved = 0;
             _takenSpace = 0;
             _averageItemSize = 0;
@@ -106,6 +112,8 @@ namespace Avalonia.Controls
         protected override void ChildrenChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             base.ChildrenChanged(sender, e);
+            if ((Controller is ItemVirtualizerSmooth) || (Controller is ItemVirtualizerLogical) || (Controller is ItemVirtualizerGroup))
+                return;
 
             switch (e.Action)
             {

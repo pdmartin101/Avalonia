@@ -25,8 +25,8 @@ namespace Avalonia.Controls.Presenters
         public ItemVirtualizer(ItemsPresenter owner)
         {
             Owner = owner;
-            Items = owner.Items;
-            ItemCount = owner.Items.Count();
+            Items = GetItems();
+            ItemCount = Items.Count();
 
             var panel = VirtualizingPanel;
 
@@ -38,6 +38,10 @@ namespace Avalonia.Controls.Presenters
             }
         }
 
+        protected virtual IEnumerable GetItems()
+        {
+            return Owner.Items;
+        }
         /// <summary>
         /// Gets the <see cref="ItemsPresenter"/> which owns the virtualizer.
         /// </summary>
@@ -77,7 +81,7 @@ namespace Avalonia.Controls.Presenters
         /// Gets a value indicating whether logical scrolling is enabled.
         /// </summary>
         public abstract bool IsLogicalScrollEnabled { get; }
-
+ 
         /// <summary>
         /// Gets the value of the scroll extent.
         /// </summary>
@@ -118,11 +122,11 @@ namespace Avalonia.Controls.Presenters
         {
             get
             {
-                if (IsLogicalScrollEnabled)
+ //               if (IsLogicalScrollEnabled)
                 {
                     return Vertical ?
-                        new Size(Owner.Panel.Bounds.Width, ViewportValue) :
-                        new Size(ViewportValue, Owner.Panel.Bounds.Height);
+                        Owner.Bounds.Size.Inflate(Owner.Margin).WithHeight(ViewportValue) :
+                        new Size(ViewportValue, Owner.Bounds.Height + Owner.Margin.Top + Owner.Margin.Bottom);
                 }
 
                 return default;
@@ -136,11 +140,15 @@ namespace Avalonia.Controls.Presenters
         {
             get
             {
-                if (IsLogicalScrollEnabled)
+ //               if (IsLogicalScrollEnabled)
                 {
-                    return Vertical ? new Vector(_crossAxisOffset, OffsetValue) : new Vector(OffsetValue, _crossAxisOffset);
+                    try
+                    {
+                         return Vertical ? new Vector(_crossAxisOffset, OffsetValue) : new Vector(OffsetValue, _crossAxisOffset);
+                    }
+                    catch (Exception e)
+                    { }
                 }
-
                 return default;
             }
 
@@ -188,12 +196,22 @@ namespace Avalonia.Controls.Presenters
             var scrollContentPresenter = owner.Parent as IScrollable;
             ItemVirtualizer result = null;
 
-            if (virtualizingPanel != null && scrollContentPresenter is object)
-            {
-                switch (owner.VirtualizationMode)
+//            if (virtualizingPanel != null && scrollContentPresenter is object)
+              if (virtualizingPanel != null)
+                {
+                    switch (owner.VirtualizationMode)
                 {
                     case ItemVirtualizationMode.Simple:
                         result = new ItemVirtualizerSimple(owner);
+                        break;
+                    case ItemVirtualizationMode.Logical:
+                        result = new ItemVirtualizerLogical(owner);
+                        break;
+                    case ItemVirtualizationMode.Smooth:
+                        result = new ItemVirtualizerSmooth(owner);
+                        break;
+                     case ItemVirtualizationMode.Group:
+                        result = new ItemVirtualizerGroup(owner);
                         break;
                 }
             }

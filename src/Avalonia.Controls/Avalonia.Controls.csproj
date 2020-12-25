@@ -3,6 +3,9 @@
     <TargetFramework>netstandard2.0</TargetFramework>    
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="Presenters\ItemVirtualizerSmooth - Copy.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <Compile Include="..\Avalonia.Base\Metadata\NullableAttributes.cs" Link="NullableAttributes.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -17,5 +20,5 @@
   </ItemGroup>
   <Import Project="..\..\build\Rx.props" />
   <Import Project="..\..\build\JetBrains.Annotations.props" />
-  <Import Project="..\..\build\ApiDiff.props" />
+  <!--<Import Project="..\..\build\ApiDiff.props" />-->
 </Project>
