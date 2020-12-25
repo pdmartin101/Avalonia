@@ -83,14 +83,11 @@ namespace Avalonia.Controls
             {
                 if (_itemContainerGenerator == null)
                 {
-                    _itemContainerGenerator = CreateItemContainerGenerator();
+                    _itemContainerGenerator = CreateTopItemContainerGenerator();
 
                     if (_itemContainerGenerator != null)
                     {
-                        _itemContainerGenerator.ItemTemplate = ItemTemplate;
-                        _itemContainerGenerator.Materialized += (_, e) => OnContainersMaterialized(e);
-                        _itemContainerGenerator.Dematerialized += (_, e) => OnContainersDematerialized(e);
-                        _itemContainerGenerator.Recycled += (_, e) => OnContainersRecycled(e);
+                        SetItemContainerGenerator(_itemContainerGenerator);
                     }
                 }
 
@@ -98,6 +95,25 @@ namespace Avalonia.Controls
             }
         }
 
+        protected virtual IItemContainerGenerator CreateTopItemContainerGenerator()
+        {
+            var generator = CreateItemContainerGenerator();
+            SetItemContainerGenerator(generator);
+            return generator;
+        }
+        public virtual IItemContainerGenerator CreateLeafItemContainerGenerator()
+        {
+            var generator = CreateItemContainerGenerator();
+            SetItemContainerGenerator(generator);
+            return generator;
+        }
+        public virtual void SetItemContainerGenerator(IItemContainerGenerator generator)
+        {
+            generator.ItemTemplate = ItemTemplate;
+            generator.Materialized += (_, e) => OnContainersMaterialized(e);
+            generator.Dematerialized += (_, e) => OnContainersDematerialized(e);
+            generator.Recycled += (_, e) => OnContainersRecycled(e);
+        }
         /// <summary>
         /// Gets or sets the items to display.
         /// </summary>

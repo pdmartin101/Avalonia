@@ -339,6 +339,12 @@ namespace Avalonia.Controls.Presenters
                 ArrangeOverrideImpl(size, -Offset);
             }
 
+            if ((Child is ItemsPresenter p) && (p.VirtualizationMode == ItemVirtualizationMode.Logical))
+            {
+                var scroller = Child as ILogicalScrollable;
+                Viewport = scroller.Viewport;
+            }
+            else
             Viewport = finalSize;
             Extent = Child.Bounds.Size.Inflate(Child.Margin);
             _isAnchorElementDirty = true;
@@ -514,6 +520,8 @@ namespace Avalonia.Controls.Presenters
                 Extent = scrollable.Extent;
                 Offset = scrollable.Offset;
             }
+            if ((Child is ItemsPresenter p) && (p.VirtualizationMode == ItemVirtualizationMode.Logical))
+                Offset = scrollable.Offset;
         }
 
         private void EnsureAnchorElementSelection()
