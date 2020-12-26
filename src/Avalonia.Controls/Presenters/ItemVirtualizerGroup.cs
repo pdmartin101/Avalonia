@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Specialized;
 using Avalonia.Controls.Utils;
+using Avalonia.Styling;
 using Avalonia.VisualTree;
 
 namespace Avalonia.Controls.Presenters
@@ -71,7 +72,7 @@ namespace Avalonia.Controls.Presenters
 //            Owner.Panel.Measure(availableSize);
             UpdateControls();
             var s = Owner.Panel.DesiredSize;
-            var estimatedSize = VirtualizingControls.GetEstimatedExtent(VirtualizingPanel.TemplatedParent,Items,Vertical);
+            var estimatedSize = VirtualizingAverages.GetEstimatedExtent(VirtualizingPanel.TemplatedParent,Items,Vertical);
             _realizedChildren.RemoveChildren(Vertical);
             if (VirtualizingPanel.ScrollDirection== Layout.Orientation.Vertical)
                 return new Size(s.Width, estimatedSize);
@@ -82,7 +83,7 @@ namespace Avalonia.Controls.Presenters
         {
             foreach (var container in _realizedChildren)
             {
-                var startOffset = VirtualizingControls.GetOffsetForIndex(VirtualizingPanel.TemplatedParent, container.Index, Items,Vertical);
+                var startOffset = VirtualizingAverages.GetOffsetForIndex(VirtualizingPanel.TemplatedParent, container.Index, Items,Vertical);
                 if (Vertical)
                     container.ContainerControl.Arrange(new Rect(new Point(0,startOffset),new Size(finalSize.Width, container.ContainerControl.DesiredSize.Height)));
                 else
@@ -129,7 +130,7 @@ namespace Avalonia.Controls.Presenters
                 VirtualizingPanel.Children.Insert(0, materialized.ContainerControl);
                 materialized.ContainerControl.Measure(Size.Infinity);
 //                System.Console.WriteLine($"GroupDummy {_id} {materialized.ContainerControl.DesiredSize} {_scrollViewer.Bounds.Height}");
-                VirtualizingControls.AddContainerSize(VirtualizingPanel.TemplatedParent, Items.ElementAt(0), materialized.ContainerControl.DesiredSize);
+                VirtualizingAverages.AddContainerSize(VirtualizingPanel.TemplatedParent, Items.ElementAt(0), materialized.ContainerControl.DesiredSize);
                 VirtualizingPanel.Children.RemoveAt(0);
                 generator.Dematerialize(0, 1);
             }

@@ -37,14 +37,14 @@ namespace Avalonia.Controls.Presenters
         public override bool IsLogicalScrollEnabled => false;
 
         /// <inheritdoc/>
-        public override double ExtentValue => VirtualizingControls.GetEstimatedExtent(VirtualizingPanel.TemplatedParent, Items, Vertical)+8;
+        public override double ExtentValue => VirtualizingAverages.GetEstimatedExtent(VirtualizingPanel.TemplatedParent, Items, Vertical)+8;
 
         /// <inheritdoc/>
         public override double OffsetValue
         {
             get
             {
-                return _currentState.FirstInView * VirtualizingControls.GetEstimatedAverage(VirtualizingPanel.TemplatedParent,Items,Vertical) + _currentState.Margin;
+                return _currentState.FirstInView * VirtualizingAverages.GetEstimatedAverage(VirtualizingPanel.TemplatedParent,Items,Vertical) + _currentState.Margin;
             }
 
             set
@@ -59,7 +59,7 @@ namespace Avalonia.Controls.Presenters
         {
             get
             {
-                return _currentState.NumInFullView * VirtualizingControls.GetEstimatedAverage(VirtualizingPanel.TemplatedParent, Items, Vertical);
+                return _currentState.NumInFullView * VirtualizingAverages.GetEstimatedAverage(VirtualizingPanel.TemplatedParent, Items, Vertical);
             }
         }
 
@@ -68,7 +68,7 @@ namespace Avalonia.Controls.Presenters
         {
             UpdateControls();
             var s = Owner.Panel.DesiredSize;
-            var estimatedSize = VirtualizingControls.GetEstimatedExtent(VirtualizingPanel.TemplatedParent, Items, Vertical);
+            var estimatedSize = VirtualizingAverages.GetEstimatedExtent(VirtualizingPanel.TemplatedParent, Items, Vertical);
             _realizedChildren.RemoveChildren(Vertical);
             if (VirtualizingPanel.ScrollDirection == Layout.Orientation.Vertical)
                 return new Size(s.Width, estimatedSize);
@@ -79,7 +79,7 @@ namespace Avalonia.Controls.Presenters
         {
             foreach (var container in _realizedChildren)
             {
-                var startOffset = VirtualizingControls.GetOffsetForIndex(VirtualizingPanel.TemplatedParent, container.Index, Items, Vertical);
+                var startOffset = VirtualizingAverages.GetOffsetForIndex(VirtualizingPanel.TemplatedParent, container.Index, Items, Vertical);
                 if (Vertical)
                     container.ContainerControl.Arrange(new Rect(new Point(0, startOffset), new Size(finalSize.Width, container.ContainerControl.DesiredSize.Height)));
                 else
@@ -125,7 +125,7 @@ namespace Avalonia.Controls.Presenters
                 var materialized = generator.Materialize(0, Items.ElementAt(0));
                 VirtualizingPanel.Children.Insert(0, materialized.ContainerControl);
                 materialized.ContainerControl.Measure(Size.Infinity);
-                VirtualizingControls.AddContainerSize(VirtualizingPanel.TemplatedParent, Items.ElementAt(0), materialized.ContainerControl.DesiredSize);
+                VirtualizingAverages.AddContainerSize(VirtualizingPanel.TemplatedParent, Items.ElementAt(0), materialized.ContainerControl.DesiredSize);
                 VirtualizingPanel.Children.RemoveAt(0);
                 generator.Dematerialize(0, 1);
             }

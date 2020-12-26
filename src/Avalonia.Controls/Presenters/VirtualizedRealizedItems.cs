@@ -40,9 +40,9 @@ namespace Avalonia.Controls.Presenters
             var rel2 = _scrollViewer.Offset;
             var panelOffset = vert ? rel.Value.Y: rel.Value.X;
             var hiOffset = panelOffset + (vert?_scrollViewer.Bounds.Height: _scrollViewer.Bounds.Width);
-            var first = VirtualizingControls.GetStartIndex(_panel.TemplatedParent, panelOffset, _items,vert);
+            var first = VirtualizingAverages.GetStartIndex(_panel.TemplatedParent, panelOffset, _items,vert);
             var indx = first;
-            var offset = VirtualizingControls.GetOffsetForIndex(_panel.TemplatedParent, indx, _items,vert);
+            var offset = VirtualizingAverages.GetOffsetForIndex(_panel.TemplatedParent, indx, _items,vert);
             var extra = offset - panelOffset;
 //            System.Console.WriteLine($"AddChildren {_id} {rel} {first} {offset} {_scrollViewer.Bounds.Height}");
             while ((offset < hiOffset) && (indx < numItems))
@@ -55,8 +55,8 @@ namespace Avalonia.Controls.Presenters
             var rel = -_panel.TranslatePoint(new Point(0, 0), _scrollViewer);
             var offset = vert ? rel.Value.Y : rel.Value.X;
             var hiOffset = offset + (vert ? _scrollViewer.Bounds.Height : _scrollViewer.Bounds.Width);
-            var startIndx = VirtualizingControls.GetStartIndex(_panel.TemplatedParent, offset, _items,vert);
-            var endIndx = VirtualizingControls.GetStartIndex(_panel.TemplatedParent, hiOffset, _items,vert);
+            var startIndx = VirtualizingAverages.GetStartIndex(_panel.TemplatedParent, offset, _items,vert);
+            var endIndx = VirtualizingAverages.GetStartIndex(_panel.TemplatedParent, hiOffset, _items,vert);
             var toRemove = new List<int>();
             foreach (var item in _generator.Containers)
             {
@@ -83,7 +83,7 @@ namespace Avalonia.Controls.Presenters
                 child.Measure(Size.Infinity);
 //                System.Console.WriteLine($"AddOneChild2 {_id} {indx} {_items.ElementAt(indx)} {child.DesiredSize}");
             }
-            if (VirtualizingControls.AddContainerSize(_panel.TemplatedParent, _items.ElementAt(indx), child.DesiredSize) !=Size.Empty)
+            if (VirtualizingAverages.AddContainerSize(_panel.TemplatedParent, _items.ElementAt(indx), child.DesiredSize) !=Size.Empty)
                 _measureRequired = true;
             return child.DesiredSize.Height;
         }
