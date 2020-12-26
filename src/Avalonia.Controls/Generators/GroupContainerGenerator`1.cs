@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using Avalonia.Collections;
 using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Templates;
@@ -10,7 +11,7 @@ namespace Avalonia.Controls.Generators
     /// Creates containers for items and maintains a list of created containers.
     /// </summary>
     /// <typeparam name="T">The type of the container.</typeparam>
-    public class GroupContainerGenerator<T> : ItemContainerGenerator where T : GroupItem, new()
+    public class GroupContainerGenerator<T> : ItemContainerGenerator where T : class, IControl, new()
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="ItemContainerGenerator{T}"/> class.
@@ -29,13 +30,13 @@ namespace Avalonia.Controls.Generators
         /// <inheritdoc/>
         protected override IControl CreateContainer(object item)
         {
-            var container = item as GroupItem;
+            var container = item as GroupItem<T>;
 
             if (container != null)
                 return container;
             else
             {
-                var result = new T();
+                var result = new GroupItem<T>();
                 var itemsControl = Owner as ItemsControl;
                 var icg = itemsControl.CreateLeafItemContainerGenerator();
                 result.SetValue(GroupItem.TemplatedParentProperty, Owner,BindingPriority.TemplatedParent);
