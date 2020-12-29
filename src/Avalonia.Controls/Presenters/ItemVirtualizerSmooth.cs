@@ -30,6 +30,14 @@ namespace Avalonia.Controls.Presenters
             _realizedChildren = new VirtualizedRealizedItems(VirtualizingPanel,_scrollViewer,Items,Owner.ItemContainerGenerator,_id);
         }
 
+        protected override IEnumerable GetItems()
+        {
+            var groupList = Owner.Items as Avalonia.Collections.GroupViewList;
+            if (groupList !=null)
+                return groupList.Groups;
+            return base.GetItems();
+        }
+
         /// <inheritdoc/>
         public override bool IsLogicalScrollEnabled => false;
 

@@ -22,9 +22,5 @@
         /// Virtualize items with smooth scrolling.
         /// </summary>
         Smooth,
-        /// <summary>
-        /// Virtualize items belonging to groups with smooth scrolling.
-        /// </summary>
-        Group,
-    }
+     }
 }
