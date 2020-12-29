@@ -1,4 +1,5 @@
 using System;
+using Avalonia.Collections;
 using Avalonia.Controls.Generators;
 using Avalonia.Controls.Metadata;
 using Avalonia.Controls.Mixins;
@@ -13,8 +14,12 @@ namespace Avalonia.Controls
     /// </summary>
     public abstract class GroupItem : ItemsControl
     {
-        public GroupItem()
+        public int Level { get; set; }
+        public GroupItem(ItemsControl itemsControl)
         {
+            if (itemsControl is GroupItem gi)
+                Level = gi.Level + 1;
+            Name = $"Level{Level,2:00}";
         }
         protected override IItemContainerGenerator CreateTopItemContainerGenerator()
         {
@@ -53,13 +58,15 @@ namespace Avalonia.Controls
 
     public class GroupItem<T> : GroupItem, IStyleable where T : class, IControl, new()
     {
-        public GroupItem()
+        public GroupItem(ItemsControl itemsControl) : base(itemsControl)
         {
         }
         protected override IItemContainerGenerator CreateTopItemContainerGenerator()
         {
             if (Presenter is ItemsPresenter ip)
                 ip.VirtualizationMode = ItemVirtualizationMode.Smooth;
+            if ((Items is GroupViewListItem gvl) && (gvl.IsGrouping))
+                return new GroupContainerGenerator<T>(this);
             return new ItemContainerGenerator<T>(
                 this,
                 ListBoxItem.ContentProperty,

@@ -22,7 +22,8 @@ namespace Avalonia.Controls.Presenters
         public ItemVirtualizerGroup(ItemsPresenter owner)
             : base(owner)
         {
-            _scrollViewer = VirtualizingPanel.Parent.Parent as ScrollViewer;
+//            _scrollViewer = VirtualizingPanel.Parent.Parent as ScrollViewer;
+            _scrollViewer = VirtualizingPanel.FindAncestorOfType<ScrollViewer>();
             _scrollViewer.ScrollChanged += Scroll_ScrollChanged;
             _itemsPresenter = VirtualizingPanel.Parent;
             _id = _count++;
@@ -31,8 +32,10 @@ namespace Avalonia.Controls.Presenters
 
         protected override IEnumerable GetItems()
         {
-            var groupList = Owner.Items as Avalonia.Collections.GroupList;
-            return groupList.Groups;
+            var groupList = Owner.Items as Avalonia.Collections.GroupViewList;
+            if ((groupList !=null) && (groupList.IsGrouping))
+                return groupList.Groups;
+            return base.GetItems();
         }
 
         /// <inheritdoc/>
@@ -63,13 +66,14 @@ namespace Avalonia.Controls.Presenters
         /// </summary>
         public override double ViewportValue
         {
-            get { return 99; }
+            get { return 999; }
         }
 
         /// <inheritdoc/>
         public override Size MeasureOverride(Size availableSize)
         {
 //            Owner.Panel.Measure(availableSize);
+//            System.Console.WriteLine($"SmoothMeasure {_id} {availableSize}");
             UpdateControls();
             var s = Owner.Panel.DesiredSize;
             var estimatedSize = VirtualizingAverages.GetEstimatedExtent(VirtualizingPanel.TemplatedParent,Items,Vertical);
