@@ -13,8 +13,7 @@
           <Expander Header="{Binding Name}">
             <ItemsPresenter Name="PART_ItemsPresenter"
                             Items="{TemplateBinding Items}"
-                            ItemsPanel="{TemplateBinding ItemsPanel}"
-                            ItemTemplate="{TemplateBinding ItemTemplate}"/>
+                            ItemsPanel="{TemplateBinding ItemsPanel}"/>
           </Expander>
         </Border>
       </ControlTemplate>
