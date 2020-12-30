@@ -208,7 +208,7 @@ namespace Avalonia.Controls.Presenters
                         result = new ItemVirtualizerLogical(owner);
                         break;
                     case ItemVirtualizationMode.Smooth:
-                        result = new ItemVirtualizerGroup(owner);
+                        result = new ItemVirtualizerSmooth(owner);
                         break;
                 }
             }

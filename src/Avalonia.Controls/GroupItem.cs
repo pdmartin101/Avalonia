@@ -15,12 +15,14 @@ namespace Avalonia.Controls
     public abstract class GroupItem : ItemsControl
     {
         public int Level { get; set; }
+
         public GroupItem(ItemsControl itemsControl)
         {
             if (itemsControl is GroupItem gi)
                 Level = gi.Level + 1;
             Name = $"Level{Level,2:00}";
         }
+
         protected override IItemContainerGenerator CreateTopItemContainerGenerator()
         {
             return new ItemContainerGenerator<ListBoxItem>(
@@ -28,30 +30,16 @@ namespace Avalonia.Controls
                 ListBoxItem.ContentProperty,
                 ListBoxItem.ContentTemplateProperty);
         }
+
         /// <summary>
         /// Initializes static members of the <see cref="GroupItem"/> class.
         /// </summary>
         /// 
 
-        /// <summary>
-        /// Defines the <see cref="VirtualizationMode"/> property.
-        /// </summary>
-        //public static readonly StyledProperty<ItemVirtualizationMode> VirtualizationModeProperty =
-        //    ItemsPresenter.VirtualizationModeProperty.AddOwner<GroupItem>();
-
-        /// <summary>
-        /// Gets or sets the virtualization mode for the items.
-        /// </summary>
-        //public ItemVirtualizationMode VirtualizationMode
-        //{
-        //    get { return GetValue(VirtualizationModeProperty); }
-        //    set { SetValue(VirtualizationModeProperty, value); }
-        //}
         static GroupItem()
         {
             PressedMixin.Attach<GroupItem>();
             FocusableProperty.OverrideDefaultValue<GroupItem>(true);
-            //            VirtualizationModeProperty.OverrideDefaultValue<GroupItem>(ItemVirtualizationMode.Simple);
         }
 
     }
@@ -72,13 +60,12 @@ namespace Avalonia.Controls
                 ListBoxItem.ContentProperty,
                 ListBoxItem.ContentTemplateProperty);
         }
-
+ 
+        Type IStyleable.StyleKey => typeof(GroupItem);
 
         /// <summary>
-        /// Initializes static members of the <see cref="GroupListBoxItem"/> class.
+        /// Initializes static members of the <see cref="GroupItem"/> class.
         /// </summary>
-
-        Type IStyleable.StyleKey => typeof(GroupItem);
 
         static GroupItem()
         {

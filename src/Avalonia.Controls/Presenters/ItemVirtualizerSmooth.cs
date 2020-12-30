@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Specialized;
+using Avalonia.Collections;
 using Avalonia.Controls.Utils;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
@@ -16,25 +17,24 @@ namespace Avalonia.Controls.Presenters
         private VirtualizedRealizedItems _realizedChildren;
         private RealizedChildrenInfo _currentState = new RealizedChildrenInfo();
         private IControl _itemsPresenter;
-        private ScrollViewer _scrollViewer;
+//        private ScrollViewer _scrollViewer;
         private int _id;
         public static int _count=300;
         public ItemVirtualizerSmooth(ItemsPresenter owner)
             : base(owner)
         {
 //            _scrollViewer = VirtualizingPanel.Parent.Parent as ScrollViewer;
-            _scrollViewer = VirtualizingPanel.FindAncestorOfType<ScrollViewer>();
-            _scrollViewer.ScrollChanged += Scroll_ScrollChanged;
+            var scrollViewer = VirtualizingPanel.FindAncestorOfType<ScrollViewer>();
+//            _scrollViewer.ScrollChanged += Scroll_ScrollChanged;
             _itemsPresenter = VirtualizingPanel.Parent;
             _id = _count++;
-            _realizedChildren = new VirtualizedRealizedItems(VirtualizingPanel,_scrollViewer,Items,Owner.ItemContainerGenerator,_id);
+            _realizedChildren = new VirtualizedRealizedItems(VirtualizingPanel,scrollViewer,Items,Owner.ItemContainerGenerator,_id);
         }
 
         protected override IEnumerable GetItems()
         {
-            var groupList = Owner.Items as Avalonia.Collections.GroupViewList;
-            if (groupList !=null)
-                return groupList.Groups;
+            if ((Owner.Items is GroupViewList gvl) && (gvl.IsGrouping))
+                return gvl.Groups;
             return base.GetItems();
         }
 
@@ -137,6 +137,7 @@ namespace Avalonia.Controls.Presenters
                 VirtualizingAverages.AddContainerSize(VirtualizingPanel.TemplatedParent, Items.ElementAt(0), materialized.ContainerControl.DesiredSize);
                 VirtualizingPanel.Children.RemoveAt(0);
                 generator.Dematerialize(0, 1);
+                _itemsPresenter.InvalidateMeasure();
             }
             else if (Items != null && VirtualizingPanel.IsAttachedToVisualTree)
             {
@@ -146,11 +147,11 @@ namespace Avalonia.Controls.Presenters
             }
         }
 
-        private void Scroll_ScrollChanged(object sender, ScrollChangedEventArgs e)
-        {
-//            System.Console.WriteLine($"Smooth Scroll {_id} {e.ExtentDelta} {e.OffsetDelta} {e.ViewportDelta}");
-            _itemsPresenter.InvalidateMeasure();
-        }
+//        private void Scroll_ScrollChanged(object sender, ScrollChangedEventArgs e)
+//        {
+////            System.Console.WriteLine($"Smooth Scroll {_id} {e.ExtentDelta} {e.OffsetDelta} {e.ViewportDelta}");
+////            _itemsPresenter.InvalidateMeasure();
+//        }
 
     }
 
