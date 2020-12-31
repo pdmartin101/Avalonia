@@ -10,92 +10,124 @@ using Avalonia.Diagnostics;
 namespace Avalonia.Collections
 {
 
-    public class GroupViewList : IList
+    public class GroupViewList : IList, INotifyCollectionChanged
     {
 
-        private IList _internal { get; set; }
-        private string _groupPath = "Group";
-        private static object _nullGroup = "Null";
-        public Dictionary<object, GroupViewListItem> _groupIds = new Dictionary<object, GroupViewListItem>();
-        public AvaloniaList<GroupViewListItem> Groups { get; set; } = new AvaloniaList<GroupViewListItem>();
-        public bool IsGrouping { get; set; } = true;
-        public bool IsFixedSize => ((IList)_internal).IsFixedSize;
+        private List<GroupPathInfo> _groupPaths;
+        public bool IsGrouping => Items.IsGrouping;
+        public GroupViewListItem Items { get; set; }
+        private AvaloniaList<object> _flatList;
 
-        public bool IsReadOnly => ((IList)_internal).IsReadOnly;
+        public bool IsFixedSize => ((IList)Items).IsFixedSize;
 
-        public int Count => ((ICollection)_internal).Count;
+        public bool IsReadOnly => ((IList)Items).IsReadOnly;
 
-        public bool IsSynchronized => ((ICollection)_internal).IsSynchronized;
+        public int Count => ((ICollection)Items).Count;
 
-        public object SyncRoot => ((ICollection)_internal).SyncRoot;
+        public bool IsSynchronized => ((ICollection)Items).IsSynchronized;
 
-        public object this[int index] { get => ((IList)_internal)[index]; set => ((IList)_internal)[index] = value; }
+        public object SyncRoot => ((ICollection)Items).SyncRoot;
+
+        public object this[int index] { get => ((IList)Items)[index]; set => ((IList)Items)[index] = value; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="GroupList"/> class.
         /// </summary>
-        public GroupViewList(IList list)
+        public GroupViewList(AvaloniaList<object> items)
         {
-            _internal = list;
+            _flatList = items;
+            _flatList.CollectionChanged += FlatCollectioChanged;
+            _groupPaths = new List<GroupPathInfo>();
+            _groupPaths.Add(new GroupPathInfo { GroupPath = "Group", NullStr = "No Group" });
+            _groupPaths.Add(new GroupPathInfo { GroupPath = "Name", NullStr = "No Name" });
+            Items = new GroupViewListItem(_groupPaths,"Root",0);
+        }
+
+        public event NotifyCollectionChangedEventHandler CollectionChanged
+        {
+            add
+            {
+                ((INotifyCollectionChanged)_flatList).CollectionChanged += value;
+            }
+
+            remove
+            {
+                ((INotifyCollectionChanged)_flatList).CollectionChanged -= value;
+            }
+        }
+
+        private void FlatCollectioChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            switch (e.Action)
+            {
+                case NotifyCollectionChangedAction.Add:
+                    foreach (var item in e.NewItems)
+                    {
+                        AddToGroup(item);
+                    }
+                    break;
+                case NotifyCollectionChangedAction.Move:
+                    break;
+                case NotifyCollectionChangedAction.Remove:
+                    break;
+                case NotifyCollectionChangedAction.Replace:
+                    break;
+                case NotifyCollectionChangedAction.Reset:
+                    break;
+                default:
+                    break;
+            }
         }
 
         public int Add(object value)
         {
-            if (_groupPath != null)
-            {
-                PropertyInfo info = value.GetType().GetProperty(_groupPath);
-                var groupValue = info?.GetValue(value);
-                if (groupValue == null)
-                    groupValue = _nullGroup;
-                if (!_groupIds.TryGetValue(groupValue, out var groupListItem))
-                {
-                    groupListItem = new GroupViewListItem(groupValue, "Name");
-                    Groups.Add(groupListItem);
-                    _groupIds.Add(groupValue, groupListItem);
-                }
-                groupListItem.Add(value);
-            }
-            return ((IList)_internal).Add(value);
+            _flatList.Add(value);
+            return AddToGroup(value);
         }
 
         public void Clear()
         {
-            ((IList)_internal).Clear();
+            ((IList)Items).Clear();
         }
 
         public bool Contains(object value)
         {
-            return ((IList)_internal).Contains(value);
+            return ((IList)Items).Contains(value);
         }
 
         public int IndexOf(object value)
         {
-            return ((IList)_internal).IndexOf(value);
+            return ((IList)Items).IndexOf(value);
         }
 
         public void Insert(int index, object value)
         {
-            ((IList)_internal).Insert(index, value);
+            ((IList)Items).Insert(index, value);
         }
 
         public void Remove(object value)
         {
-            ((IList)_internal).Remove(value);
+            ((IList)Items).Remove(value);
         }
 
         public void RemoveAt(int index)
         {
-            ((IList)_internal).RemoveAt(index);
+            ((IList)Items).RemoveAt(index);
         }
 
         public void CopyTo(Array array, int index)
         {
-            ((ICollection)_internal).CopyTo(array, index);
+            ((ICollection)Items).CopyTo(array, index);
         }
 
         public IEnumerator GetEnumerator()
         {
-            return ((IEnumerable)_internal).GetEnumerator();
+            return ((IEnumerable)Items).GetEnumerator();
+        }
+
+        private int AddToGroup(object value)
+        {
+            return ((IList)Items).Add(value);
         }
     }
 
@@ -103,16 +135,23 @@ namespace Avalonia.Collections
     {
         public object Name { get; set; }
         public int ItemCount => _items.Count;
-        public bool IsGrouping => _groupPath != null;
+        public bool IsGrouping => _groupPaths.Count() > _groupLevel;
         public Dictionary<object, GroupViewListItem> _groupIds = new Dictionary<object, GroupViewListItem>();
-        private static object _nullGroup = "Null";
-        private string _groupPath;
-        public GroupViewListItem(object name, string groupPath)
+        private List<GroupPathInfo> _groupPaths;
+        private int _groupLevel = 0;
+        private IList _items { get; set; } = new AvaloniaList<object>();
+        //public GroupViewListItem(object name, string groupPath)
+        //{
+        //    Name = name;
+        //    _groupPath = groupPath;
+        //}
+        public GroupViewListItem(List<GroupPathInfo> groupPaths,object groupValue, int level)
         {
-            Name = name;
-            _groupPath = groupPath;
+            _items = new List<object>();
+            _groupPaths = groupPaths;
+            _groupLevel = level;
+            Name = groupValue;
         }
-        public AvaloniaList<object> _items { get; set; } = new AvaloniaList<object>();
 
         public bool IsFixedSize => ((IList)_items).IsFixedSize;
 
@@ -126,34 +165,29 @@ namespace Avalonia.Collections
 
         public object this[int index] { get => ((IList)_items)[index]; set => ((IList)_items)[index] = value; }
 
-        public void Add(object item)
+        public int Add(object item)
         {
             if (IsGrouping)
             {
-                PropertyInfo info = item.GetType().GetProperty(_groupPath);
+                PropertyInfo info = item.GetType().GetProperty(_groupPaths[_groupLevel].GroupPath);
                 var groupValue = info?.GetValue(item);
                 if (groupValue == null)
-                    groupValue = _nullGroup;
+                    groupValue = _groupPaths[_groupLevel].NullStr;
                 if (!_groupIds.TryGetValue(groupValue, out var groupListItem))
                 {
-                    groupListItem = new GroupViewListItem(groupValue, null);
+                    groupListItem = new GroupViewListItem(_groupPaths,groupValue, _groupLevel+1);
                     _items.Add(groupListItem);
                     _groupIds.Add(groupValue, groupListItem);
                 }
-                groupListItem.Add(item);
+                return groupListItem.Add(item);
 
             }
             else
-                _items.Add(item);
+                return _items.Add(item);
         }
         public override string ToString()
         {
             return $"{Name}";
-        }
-
-        int IList.Add(object value)
-        {
-            return ((IList)_items).Add(value);
         }
 
         public void Clear()
@@ -196,4 +230,11 @@ namespace Avalonia.Collections
             return ((IEnumerable)_items).GetEnumerator();
         }
     }
+
+    public class GroupPathInfo
+    {
+        public string GroupPath { get; set; }
+        public string NullStr { get; set; }
+    }
+
 }

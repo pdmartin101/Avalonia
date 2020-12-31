@@ -34,7 +34,7 @@ namespace Avalonia.Controls.Presenters
         {
             var groupList = Owner.Items as Avalonia.Collections.GroupViewList;
             if ((groupList !=null) && (groupList.IsGrouping))
-                return groupList.Groups;
+                return groupList.Items;
             return base.GetItems();
         }
 
