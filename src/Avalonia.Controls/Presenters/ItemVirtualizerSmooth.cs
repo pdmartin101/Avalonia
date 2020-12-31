@@ -25,7 +25,7 @@ namespace Avalonia.Controls.Presenters
         {
 //            _scrollViewer = VirtualizingPanel.Parent.Parent as ScrollViewer;
             var scrollViewer = VirtualizingPanel.FindAncestorOfType<ScrollViewer>();
-//            _scrollViewer.ScrollChanged += Scroll_ScrollChanged;
+            scrollViewer.ScrollChanged += Scroll_ScrollChanged;
             _itemsPresenter = VirtualizingPanel.Parent;
             _id = _count++;
             _realizedChildren = new VirtualizedRealizedItems(VirtualizingPanel,scrollViewer,Items,Owner.ItemContainerGenerator,_id);
@@ -34,7 +34,7 @@ namespace Avalonia.Controls.Presenters
         protected override IEnumerable GetItems()
         {
             if ((Owner.Items is GroupViewList gvl) && (gvl.IsGrouping))
-                return gvl.Groups;
+                return gvl.Items;
             return base.GetItems();
         }
 
@@ -107,8 +107,8 @@ namespace Avalonia.Controls.Presenters
         /// <inheritdoc/>
         public override void ItemsChanged(IEnumerable items, NotifyCollectionChangedEventArgs e)
         {
-            base.ItemsChanged(items, e);
-            ItemContainerSync.ItemsChanged(Owner, items, e);
+            //base.ItemsChanged(items, e);
+            //ItemContainerSync.ItemsChanged(Owner, items, e);
             _itemsPresenter.InvalidateMeasure();
         }
 
@@ -147,11 +147,11 @@ namespace Avalonia.Controls.Presenters
             }
         }
 
-//        private void Scroll_ScrollChanged(object sender, ScrollChangedEventArgs e)
-//        {
-////            System.Console.WriteLine($"Smooth Scroll {_id} {e.ExtentDelta} {e.OffsetDelta} {e.ViewportDelta}");
-////            _itemsPresenter.InvalidateMeasure();
-//        }
+        private void Scroll_ScrollChanged(object sender, ScrollChangedEventArgs e)
+        {
+            //            System.Console.WriteLine($"Smooth Scroll {_id} {e.ExtentDelta} {e.OffsetDelta} {e.ViewportDelta}");
+            _itemsPresenter.InvalidateMeasure();
+        }
 
     }
 
