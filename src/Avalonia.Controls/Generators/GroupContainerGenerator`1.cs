@@ -38,18 +38,12 @@ namespace Avalonia.Controls.Generators
             {
                 var itemsControl = Owner as ItemsControl;
                 var result = new GroupItem<T>(itemsControl);
-                var icg = itemsControl.CreateLeafItemContainerGenerator();
                 result.SetValue(GroupItem.TemplatedParentProperty, Owner,BindingPriority.TemplatedParent);
                 result.Items = (GroupViewListItem)item;
                 result.SetValue(GroupItem.ItemsPanelProperty, itemsControl.ItemsPanel);
                 result.ItemTemplate = itemsControl?.ItemTemplate;
-//                result.VirtualizationMode= ItemVirtualizationMode.Smooth;
-                icg.ItemTemplate = itemsControl?.ItemTemplate;
-
                 if (!(item is IControl))
-                {
                     result.DataContext = item;
-                }
 
                 return result;
             }

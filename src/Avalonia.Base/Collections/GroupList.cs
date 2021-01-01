@@ -5,12 +5,13 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Avalonia.Diagnostics;
 
 namespace Avalonia.Collections
 {
 
-    public class GroupViewList : IList, INotifyCollectionChanged
+    public class GroupViewList : IList , INotifyCollectionChanged
     {
 
         private List<GroupPathInfo> _groupPaths;
@@ -47,14 +48,27 @@ namespace Avalonia.Collections
         {
             add
             {
-                ((INotifyCollectionChanged)_flatList).CollectionChanged += value;
+                ((INotifyCollectionChanged)Items).CollectionChanged += value;
             }
 
             remove
             {
-                ((INotifyCollectionChanged)_flatList).CollectionChanged -= value;
+                ((INotifyCollectionChanged)Items).CollectionChanged -= value;
             }
         }
+
+        //public event NotifyCollectionChangedEventHandler CollectionChanged
+        //{
+        //    add
+        //    {
+        //        ((INotifyCollectionChanged)_flatList).CollectionChanged += value;
+        //    }
+
+        //    remove
+        //    {
+        //        ((INotifyCollectionChanged)_flatList).CollectionChanged -= value;
+        //    }
+        //}
 
         private void FlatCollectioChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
@@ -62,13 +76,13 @@ namespace Avalonia.Collections
             {
                 case NotifyCollectionChangedAction.Add:
                     foreach (var item in e.NewItems)
-                    {
                         AddToGroup(item);
-                    }
                     break;
                 case NotifyCollectionChangedAction.Move:
                     break;
                 case NotifyCollectionChangedAction.Remove:
+                    foreach (var item in e.OldItems)
+                        RemoveFromGroup(item);
                     break;
                 case NotifyCollectionChangedAction.Replace:
                     break;
@@ -107,7 +121,8 @@ namespace Avalonia.Collections
 
         public void Remove(object value)
         {
-            ((IList)Items).Remove(value);
+            _flatList.Remove(value);
+            RemoveFromGroup(value);
         }
 
         public void RemoveAt(int index)
@@ -129,9 +144,13 @@ namespace Avalonia.Collections
         {
             return ((IList)Items).Add(value);
         }
+        private void RemoveFromGroup(object value)
+        {
+            ((IList)Items).Remove(value);
+        }
     }
 
-    public class GroupViewListItem : IList
+    public class GroupViewListItem : IList, INotifyCollectionChanged, INotifyPropertyChanged
     {
         public object Name { get; set; }
         public int ItemCount => _items.Count;
@@ -139,6 +158,9 @@ namespace Avalonia.Collections
         public Dictionary<object, GroupViewListItem> _groupIds = new Dictionary<object, GroupViewListItem>();
         private List<GroupPathInfo> _groupPaths;
         private int _groupLevel = 0;
+
+        private event NotifyCollectionChangedEventHandler _collectionChanged;
+
         private IList _items { get; set; } = new AvaloniaList<object>();
         //public GroupViewListItem(object name, string groupPath)
         //{
@@ -153,6 +175,16 @@ namespace Avalonia.Collections
             Name = groupValue;
         }
 
+        public event NotifyCollectionChangedEventHandler CollectionChanged
+        {
+            add => _collectionChanged += value;
+            remove => _collectionChanged -= value;
+        }
+        /// <summary>
+        /// Raised when a property on the collection changes.
+        /// </summary>
+        public event PropertyChangedEventHandler PropertyChanged;
+
         public bool IsFixedSize => ((IList)_items).IsFixedSize;
 
         public bool IsReadOnly => ((IList)_items).IsReadOnly;
@@ -165,25 +197,22 @@ namespace Avalonia.Collections
 
         public object this[int index] { get => ((IList)_items)[index]; set => ((IList)_items)[index] = value; }
 
-        public int Add(object item)
+        public int Add(object value)
         {
             if (IsGrouping)
             {
-                PropertyInfo info = item.GetType().GetProperty(_groupPaths[_groupLevel].GroupPath);
-                var groupValue = info?.GetValue(item);
-                if (groupValue == null)
-                    groupValue = _groupPaths[_groupLevel].NullStr;
-                if (!_groupIds.TryGetValue(groupValue, out var groupListItem))
-                {
-                    groupListItem = new GroupViewListItem(_groupPaths,groupValue, _groupLevel+1);
-                    _items.Add(groupListItem);
-                    _groupIds.Add(groupValue, groupListItem);
-                }
-                return groupListItem.Add(item);
-
+                var groupListItem = GetGroup(value, out var newlyCreated, out var indx);
+                groupListItem.Add(value);
+                if (newlyCreated)
+                    NotifyAdd(groupListItem, indx);
+                return indx;
             }
             else
-                return _items.Add(item);
+            {
+                var indx= _items.Add(value);
+                NotifyAdd(value, indx);
+                return indx;
+            }
         }
         public override string ToString()
         {
@@ -212,7 +241,15 @@ namespace Avalonia.Collections
 
         public void Remove(object value)
         {
-            ((IList)_items).Remove(value);
+            if (IsGrouping)
+            {
+                var groupListItem = GetGroup(value,out var _, out var _);
+                groupListItem.Remove(value);
+                if (groupListItem.ItemCount == 0)
+                    RemoveAndNotify(groupListItem);
+            }
+            else
+                RemoveAndNotify(value);
         }
 
         public void RemoveAt(int index)
@@ -229,6 +266,70 @@ namespace Avalonia.Collections
         {
             return ((IEnumerable)_items).GetEnumerator();
         }
+
+        private void RemoveAndNotify(object value)
+        {
+            int index = IndexOf(value);
+            if (index != -1)
+            {
+                RemoveAt(index);
+                NotifyRemove(value, index);
+            }
+        }
+        private void RemoveAndNotify(int index)
+        {
+            if (index != -1)
+            {
+                var value = _items[index];
+                ((IList)_items).RemoveAt(index);
+                NotifyRemove(value, index);
+            }
+        }
+        private object GetGroupValue(object item)
+        {
+            PropertyInfo info = item.GetType().GetProperty(_groupPaths[_groupLevel].GroupPath);
+            var groupValue = info?.GetValue(item);
+            if (groupValue == null)
+                groupValue = _groupPaths[_groupLevel].NullStr;
+            return groupValue;
+        }
+
+        private GroupViewListItem GetGroup(object item, out bool newlyCreated, out int indx)
+        {
+            var groupValue = GetGroupValue(item);
+            newlyCreated = false;
+            indx = -1;
+            if (!_groupIds.TryGetValue(groupValue, out var groupListItem))
+            {
+                groupListItem = new GroupViewListItem(_groupPaths, groupValue, _groupLevel + 1);
+                indx=_items.Add(groupListItem);
+                _groupIds.Add(groupValue, groupListItem);
+                newlyCreated = true;
+            }
+            return groupListItem;
+        }
+
+        private void NotifyRemove(object item, int index)
+        {
+            if (_collectionChanged != null)
+            {
+                var e = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, new[] { item }, index);
+                _collectionChanged(this, e);
+            }
+            RaisePropertyChanged("ItemCount");
+        }
+        private void NotifyAdd(object item, int index)
+        {
+            if (_collectionChanged != null)
+            {
+                var e = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, new[] { item }, index);
+                _collectionChanged(this, e);
+            }
+            RaisePropertyChanged("ItemCount");
+        }
+        protected void RaisePropertyChanged([CallerMemberName] string propertyName = null)
+             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
     }
 
     public class GroupPathInfo
