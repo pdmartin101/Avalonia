@@ -101,12 +101,12 @@ namespace Avalonia.Controls
             SetItemContainerGenerator(generator);
             return generator;
         }
-        public virtual IItemContainerGenerator CreateLeafItemContainerGenerator()
-        {
-            var generator = CreateItemContainerGenerator();
-            SetItemContainerGenerator(generator);
-            return generator;
-        }
+        //public virtual IItemContainerGenerator CreateLeafItemContainerGenerator()
+        //{
+        //    var generator = CreateItemContainerGenerator();
+        //    SetItemContainerGenerator(generator);
+        //    return generator;
+        //}
         public virtual void SetItemContainerGenerator(IItemContainerGenerator generator)
         {
             generator.ItemTemplate = ItemTemplate;
