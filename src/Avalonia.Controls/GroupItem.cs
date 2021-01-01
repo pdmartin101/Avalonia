@@ -4,6 +4,7 @@ using Avalonia.Controls.Generators;
 using Avalonia.Controls.Metadata;
 using Avalonia.Controls.Mixins;
 using Avalonia.Controls.Presenters;
+using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Styling;
 
@@ -49,18 +50,27 @@ namespace Avalonia.Controls
         public GroupItem(ItemsControl itemsControl) : base(itemsControl)
         {
         }
+
+        public ItemVirtualizationMode VirtualizationMode { get; set; } = ItemVirtualizationMode.Smooth;
+        public ItemsControl GroupParent { get; set; }
+
         protected override IItemContainerGenerator CreateTopItemContainerGenerator()
         {
             if (Presenter is ItemsPresenter ip)
-                ip.VirtualizationMode = ItemVirtualizationMode.Smooth;
+            {
+                ip.VirtualizationMode = VirtualizationMode;
+                ip.SetValue(ItemsPresenter.ItemsPanelProperty, ItemsPanel);   // this can be done with a template binding in style, but this simplifies xaml
+            }
             if ((Items is GroupViewListItem gvl) && (gvl.IsGrouping))
-                return new GroupContainerGenerator<T>(this);
-            return new ItemContainerGenerator<T>(
+                return new GroupContainerGenerator<T>(this, GroupParent);
+            var container = new ItemContainerGenerator<T>(
                 this,
                 ListBoxItem.ContentProperty,
                 ListBoxItem.ContentTemplateProperty);
+            GroupParent.SetItemContainerGenerator(container);
+            return container;
         }
- 
+
         Type IStyleable.StyleKey => typeof(GroupItem);
 
         /// <summary>
@@ -69,9 +79,6 @@ namespace Avalonia.Controls
 
         static GroupItem()
         {
-            //            PressedMixin.Attach<GroupListBoxItem>();
-            //            FocusableProperty.OverrideDefaultValue<GroupListBoxItem>(true);
-            //            VirtualizationModeProperty.OverrideDefaultValue<GroupListBoxItem>(ItemVirtualizationMode.Simple);
         }
 
     }

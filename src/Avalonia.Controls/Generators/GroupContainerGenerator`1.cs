@@ -13,15 +13,16 @@ namespace Avalonia.Controls.Generators
     /// <typeparam name="T">The type of the container.</typeparam>
     public class GroupContainerGenerator<T> : ItemContainerGenerator where T : class, IControl, new()
     {
+        private ItemsControl _groupParent;
         /// <summary>
         /// Initializes a new instance of the <see cref="ItemContainerGenerator{T}"/> class.
         /// </summary>
         /// <param name="owner">The owner control.</param>
-        public GroupContainerGenerator(
-            IControl owner)
+        public GroupContainerGenerator(IControl owner, ItemsControl groupParent)
             : base(owner)
         {
             Contract.Requires<ArgumentNullException>(owner != null);
+            _groupParent = groupParent;
         }
 
         /// <inheritdoc/>
@@ -37,11 +38,15 @@ namespace Avalonia.Controls.Generators
             else
             {
                 var itemsControl = Owner as ItemsControl;
+                var presenter = itemsControl.Presenter as ItemsPresenter;
                 var result = new GroupItem<T>(itemsControl);
                 result.SetValue(GroupItem.TemplatedParentProperty, Owner,BindingPriority.TemplatedParent);
+                result.GroupParent = _groupParent;
                 result.Items = (GroupViewListItem)item;
                 result.SetValue(GroupItem.ItemsPanelProperty, itemsControl.ItemsPanel);
                 result.ItemTemplate = itemsControl?.ItemTemplate;
+                if (presenter !=null)
+                    result.VirtualizationMode = presenter.VirtualizationMode;
                 if (!(item is IControl))
                     result.DataContext = item;
 

@@ -57,19 +57,6 @@ namespace Avalonia.Collections
             }
         }
 
-        //public event NotifyCollectionChangedEventHandler CollectionChanged
-        //{
-        //    add
-        //    {
-        //        ((INotifyCollectionChanged)_flatList).CollectionChanged += value;
-        //    }
-
-        //    remove
-        //    {
-        //        ((INotifyCollectionChanged)_flatList).CollectionChanged -= value;
-        //    }
-        //}
-
         private void FlatCollectioChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             switch (e.Action)
