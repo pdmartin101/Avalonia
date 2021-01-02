@@ -81,7 +81,7 @@ namespace Avalonia.Controls.Presenters
             UpdateControls();
             var s = Owner.Panel.DesiredSize;
             var estimatedSize = VirtualizingAverages.GetEstimatedExtent(VirtualizingPanel.TemplatedParent,Items,Vertical);
-//            _realizedChildren.RemoveChildren(Vertical);
+            _realizedChildren.RemoveChildren(Vertical);
             if (VirtualizingPanel.ScrollDirection== Layout.Orientation.Vertical)
                 return new Size(s.Width, estimatedSize);
             return new Size(estimatedSize, s.Height);
@@ -144,10 +144,10 @@ namespace Avalonia.Controls.Presenters
                     materialized.ContainerControl.Measure(Size.Infinity);
                     //                System.Console.WriteLine($"SmoothDummy {_id} {materialized.ContainerControl.DesiredSize} {_scrollViewer.Bounds.Height}");
                     VirtualizingAverages.AddContainerSize(VirtualizingPanel.TemplatedParent, Items.ElementAt(0), materialized.ContainerControl.DesiredSize);
-                    //VirtualizingPanel.Children.RemoveAt(0);
-                    //generator.Dematerialize(0, 1);
-                    //System.Console.WriteLine($"Invalidate Measure01  {_id}");
- //                   _itemsPresenter.InvalidateMeasure();
+                    VirtualizingPanel.Children.RemoveAt(0);
+                    generator.Dematerialize(0, 1);
+                    System.Console.WriteLine($"Invalidate Measure01  {_id}");
+                    _itemsPresenter.InvalidateMeasure();
                     _estimated = true;
                 }
             }

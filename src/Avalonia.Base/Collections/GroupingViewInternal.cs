@@ -8,22 +8,14 @@ using System.Runtime.CompilerServices;
 
 namespace Avalonia.Collections
 {
-    public class GroupingViewInternal : IAvaloniaList<object>, IList, INotifyCollectionChanged, INotifyPropertyChanged
+    public class GroupingViewInternal : IEnumerable, INotifyCollectionChanged, INotifyPropertyChanged
     {
         #region Properties
         public object Name { get; set; }
         public bool IsGrouping => _groupPaths.Count > _groupLevel;
         public Dictionary<object, GroupingViewInternal> _groupIds = new Dictionary<object, GroupingViewInternal>();
+        public int Count => _items.Count;
 
-        #region IAvaloniaList<object> Properties
-        public int Count => ((IAvaloniaList<object>)_items).Count;
-
-        public bool IsReadOnly => ((ICollection<object>)_items).IsReadOnly;
-
-        object IReadOnlyList<object>.this[int index] => ((IReadOnlyList<object>)_items)[index];
-
-        public object this[int index] { get => ((IAvaloniaList<object>)_items)[index]; set => ((IAvaloniaList<object>)_items)[index] = value; }
-        #endregion
         #endregion
 
         #region Private Data
@@ -31,18 +23,6 @@ namespace Avalonia.Collections
         private int _groupLevel = 0;
         private event NotifyCollectionChangedEventHandler _collectionChanged;
         private AvaloniaList<object> _items { get; set; } = new AvaloniaList<object>();
-
-        bool IList.IsFixedSize => throw new NotImplementedException();
-
-        bool IList.IsReadOnly => throw new NotImplementedException();
-
-        int ICollection.Count => Count;
-
-        bool ICollection.IsSynchronized => throw new NotImplementedException();
-
-        object ICollection.SyncRoot => throw new NotImplementedException();
-
-        object IList.this[int index] { get => this[index]; set => this[index]=value; }
 
         #endregion
 
@@ -69,8 +49,16 @@ namespace Avalonia.Collections
 
         #endregion
 
-        #region IAvaloniaList<object> Methods
-        public void AddRange(IEnumerable<object> items)
+        #region Collection Methods
+
+        internal void AddRange(IList items)
+        {
+            var tempList = new List<object>();
+            foreach (var item in items)
+                tempList.Add(item);
+            AddRangeImpl(tempList);
+        }
+        private void AddRangeImpl(IEnumerable<object> items)
         {
             var indx = Count;
             if (IsGrouping)
@@ -80,7 +68,7 @@ namespace Avalonia.Collections
                 foreach (var item in items)
                 {
                     var groupListItem = GetGroup(item, out var newlyCreated, out _);
-                    if (!hiearchyList.TryGetValue(groupListItem,out var groupItems))
+                    if (!hiearchyList.TryGetValue(groupListItem, out var groupItems))
                     {
                         groupItems = new List<object>();
                         hiearchyList.Add(groupListItem, groupItems);
@@ -90,61 +78,27 @@ namespace Avalonia.Collections
                         newlyCreatedGroups.Add(groupListItem);
                 }
                 foreach (var group in hiearchyList)
-                    group.Key.AddRange(group.Value);
+                    group.Key.AddRangeImpl(group.Value);
                 NotifyAddRange(newlyCreatedGroups, indx);
             }
             else
             {
                 ((IAvaloniaList<object>)_items).AddRange(items);
-                NotifyAddRange((IList)items,indx);
+                NotifyAddRange((IList)items, indx);
             }
         }
 
-        public void InsertRange(int index, IEnumerable<object> items)
-        {
-            throw new NotSupportedException();
-            ((IAvaloniaList<object>)_items).InsertRange(index, items);
-        }
-
-        public void Move(int oldIndex, int newIndex)
-        {
-            throw new NotSupportedException();
-            ((IAvaloniaList<object>)_items).Move(oldIndex, newIndex);
-        }
-
-        public void MoveRange(int oldIndex, int count, int newIndex)
-        {
-            throw new NotSupportedException();
-            ((IAvaloniaList<object>)_items).MoveRange(oldIndex, count, newIndex);
-        }
-
-        public void RemoveAll(IEnumerable<object> items)
-        {
-            ((IAvaloniaList<object>)_items).RemoveAll(items);
-        }
-
-        public void RemoveRange(int index, int count)
-        {
-            throw new NotSupportedException();
-            ((IAvaloniaList<object>)_items).RemoveRange(index, count);
-        }
-
-        public int IndexOf(object item)
+        private int IndexOf(object item)
         {
             return ((IList<object>)_items).IndexOf(item);
         }
 
-        public void Insert(int index, object item)
-        {
-            ((IList<object>)_items).Insert(index, item);
-        }
-
-        public void RemoveAt(int index)
+        private void RemoveAt(int index)
         {
             ((IList<object>)_items).RemoveAt(index);
         }
 
-        public void Add(object item)
+        internal void Add(object item)
         {
             if (IsGrouping)
             {
@@ -160,35 +114,28 @@ namespace Avalonia.Collections
             }
         }
 
-        public void Clear()
+        internal void Clear()
         {
             if (IsGrouping)
             {
                 foreach (var group in _items)
+                {
                     ((GroupingViewInternal)group).Clear();
+                    _groupIds.Remove(((GroupingViewInternal)group).Name);
+                }
             }
-            ((ICollection<object>)_items).Clear();
+            _items.Clear();
             NotifyReset();
         }
 
-        public bool Contains(object item)
-        {
-            return ((ICollection<object>)_items).Contains(item);
-        }
-
-        public void CopyTo(object[] array, int arrayIndex)
-        {
-            ((ICollection<object>)_items).CopyTo(array, arrayIndex);
-        }
-
-        public bool Remove(object item)
+        internal bool Remove(object item)
         {
             if (IsGrouping)
             {
                 var groupListItem = GetGroup(item, out var _, out var _);
-                var rem=groupListItem.Remove(item);
+                var rem = groupListItem.Remove(item);
                 if (groupListItem.Count == 0)
-                    RemoveAndNotify(groupListItem);
+                    RemoveGroup(groupListItem);
                 return rem;
             }
             else
@@ -221,15 +168,6 @@ namespace Avalonia.Collections
             }
             return false;
         }
-        private void RemoveAndNotify(int index)
-        {
-            if (index != -1)
-            {
-                var value = _items[index];
-                ((IList)_items).RemoveAt(index);
-                NotifyRemove(value, index);
-            }
-        }
         private object GetGroupValue(object item)
         {
             PropertyInfo info = item.GetType().GetProperty(_groupPaths[_groupLevel].GroupPath);
@@ -251,6 +189,12 @@ namespace Avalonia.Collections
                 newlyCreated = true;
             }
             return groupListItem;
+        }
+
+        private void RemoveGroup(GroupingViewInternal groupListItem)
+        {
+            _groupIds.Remove(groupListItem.Name);
+            RemoveAndNotify(groupListItem);
         }
 
         private static int _notifyCount;
@@ -291,51 +235,6 @@ namespace Avalonia.Collections
                 _collectionChanged(this, e);
             }
             RaisePropertyChanged("ItemCount");
-        }
-
-        #endregion
-
-        #region IList
-        int IList.Add(object value)
-        {
-            int index = Count;
-            Add(value);
-            return index;
-        }
-
-        void IList.Clear()
-        {
-            throw new NotImplementedException();
-        }
-
-        bool IList.Contains(object value)
-        {
-            throw new NotImplementedException();
-        }
-
-        int IList.IndexOf(object value)
-        {
-            throw new NotImplementedException();
-        }
-
-        void IList.Insert(int index, object value)
-        {
-            throw new NotImplementedException();
-        }
-
-        void IList.Remove(object value)
-        {
-            throw new NotImplementedException();
-        }
-
-        void IList.RemoveAt(int index)
-        {
-            throw new NotImplementedException();
-        }
-
-        void ICollection.CopyTo(Array array, int index)
-        {
-            throw new NotImplementedException();
         }
 
         #endregion
