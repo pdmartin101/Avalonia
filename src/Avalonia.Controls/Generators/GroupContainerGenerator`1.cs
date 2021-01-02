@@ -42,7 +42,7 @@ namespace Avalonia.Controls.Generators
                 var result = new GroupItem<T>(itemsControl);
                 result.SetValue(GroupItem.TemplatedParentProperty, Owner,BindingPriority.TemplatedParent);
                 result.GroupParent = _groupParent;
-                result.Items = (GroupViewListItem)item;
+                result.Items = (GroupingViewInternal)item;
                 result.SetValue(GroupItem.ItemsPanelProperty, itemsControl.ItemsPanel);
                 result.ItemTemplate = itemsControl?.ItemTemplate;
                 if (presenter !=null)

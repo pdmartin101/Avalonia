@@ -32,7 +32,7 @@ namespace Avalonia.Controls.Presenters
 
         protected override IEnumerable GetItems()
         {
-            var groupList = Owner.Items as Avalonia.Collections.GroupViewList;
+            var groupList = Owner.Items as Avalonia.Collections.GroupingView;
             if ((groupList !=null) && (groupList.IsGrouping))
                 return groupList.Items;
             return base.GetItems();

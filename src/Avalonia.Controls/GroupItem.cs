@@ -61,7 +61,7 @@ namespace Avalonia.Controls
                 ip.VirtualizationMode = VirtualizationMode;
                 ip.SetValue(ItemsPresenter.ItemsPanelProperty, ItemsPanel);   // this can be done with a template binding in style, but this simplifies xaml
             }
-            if ((Items is GroupViewListItem gvl) && (gvl.IsGrouping))
+            if ((Items is GroupingViewInternal gvl) && (gvl.IsGrouping))
                 return new GroupContainerGenerator<T>(this, GroupParent);
             var container = new ItemContainerGenerator<T>(
                 this,

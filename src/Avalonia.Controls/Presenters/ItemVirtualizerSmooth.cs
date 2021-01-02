@@ -34,7 +34,7 @@ namespace Avalonia.Controls.Presenters
 
         protected override IEnumerable GetItems()
         {
-            if ((Owner.Items is GroupViewList gvl) && (gvl.IsGrouping))   // Will work without but easier to debug with
+            if ((Owner.Items is GroupingView gvl) && (gvl.IsGrouping))   // Will work without but easier to debug with
                 return gvl.Items;
             return base.GetItems();
         }
@@ -70,15 +70,18 @@ namespace Avalonia.Controls.Presenters
             get { return 999; }
         }
 
+        private static int _measureCount;
+        private static int _overrideCount;
         /// <inheritdoc/>
         public override Size MeasureOverride(Size availableSize)
         {
+            System.Console.WriteLine($"Measure {_id} {++_measureCount}");
             //            Owner.Panel.Measure(availableSize);
-//            System.Console.WriteLine($"SmoothMeasure {_id} {availableSize}");
+            //            System.Console.WriteLine($"SmoothMeasure {_id} {availableSize}");
             UpdateControls();
             var s = Owner.Panel.DesiredSize;
             var estimatedSize = VirtualizingAverages.GetEstimatedExtent(VirtualizingPanel.TemplatedParent,Items,Vertical);
-            _realizedChildren.RemoveChildren(Vertical);
+//            _realizedChildren.RemoveChildren(Vertical);
             if (VirtualizingPanel.ScrollDirection== Layout.Orientation.Vertical)
                 return new Size(s.Width, estimatedSize);
             return new Size(estimatedSize, s.Height);
@@ -86,6 +89,7 @@ namespace Avalonia.Controls.Presenters
 
         public override Size ArrangeOverride(Size finalSize)
         {
+            System.Console.WriteLine($"Override {_id} {++_overrideCount}");
             foreach (var container in _realizedChildren)
             {
                 var startOffset = VirtualizingAverages.GetOffsetForIndex(VirtualizingPanel.TemplatedParent, container.Index, Items,Vertical);
@@ -102,6 +106,7 @@ namespace Avalonia.Controls.Presenters
         public override void UpdateControls()
         {
             CreateAndRemoveContainers();
+            //System.Console.WriteLine($"Invalidate Scroll");
             InvalidateScroll();
         }
 
@@ -110,6 +115,7 @@ namespace Avalonia.Controls.Presenters
         {
             base.ItemsChanged(items, e);
             ItemContainerSync.ItemsChanged(Owner, items, e);
+            System.Console.WriteLine($"Invalidate Measure00  {_id}");
             _itemsPresenter.InvalidateMeasure();
         }
 
@@ -138,9 +144,10 @@ namespace Avalonia.Controls.Presenters
                     materialized.ContainerControl.Measure(Size.Infinity);
                     //                System.Console.WriteLine($"SmoothDummy {_id} {materialized.ContainerControl.DesiredSize} {_scrollViewer.Bounds.Height}");
                     VirtualizingAverages.AddContainerSize(VirtualizingPanel.TemplatedParent, Items.ElementAt(0), materialized.ContainerControl.DesiredSize);
-                    VirtualizingPanel.Children.RemoveAt(0);
-                    generator.Dematerialize(0, 1);
-                    _itemsPresenter.InvalidateMeasure();
+                    //VirtualizingPanel.Children.RemoveAt(0);
+                    //generator.Dematerialize(0, 1);
+                    //System.Console.WriteLine($"Invalidate Measure01  {_id}");
+ //                   _itemsPresenter.InvalidateMeasure();
                     _estimated = true;
                 }
             }
@@ -148,13 +155,18 @@ namespace Avalonia.Controls.Presenters
             {
                 _currentState=_realizedChildren.AddChildren(Vertical);
                 if (_currentState.RequiresReMeasure)
+                {
+                    System.Console.WriteLine($"Invalidate Measure02  {_id}");
                     _itemsPresenter.InvalidateMeasure();
+                }
+
+                }
             }
-        }
 
         private void Scroll_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
             //            System.Console.WriteLine($"Smooth Scroll {_id} {e.ExtentDelta} {e.OffsetDelta} {e.ViewportDelta}");
+            System.Console.WriteLine($"Invalidate Measure03 {_id}");
             _itemsPresenter.InvalidateMeasure();
         }
 

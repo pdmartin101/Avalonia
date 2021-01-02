@@ -83,7 +83,8 @@ namespace Avalonia.Controls.Presenters
                 child.Measure(Size.Infinity);
 //                System.Console.WriteLine($"AddOneChild2 {_id} {indx} {_items.ElementAt(indx)} {child.DesiredSize}");
             }
-            if (VirtualizingAverages.AddContainerSize(_panel.TemplatedParent, _items.ElementAt(indx), child.DesiredSize) !=Size.Empty)
+            var diff = VirtualizingAverages.AddContainerSize(_panel.TemplatedParent, _items.ElementAt(indx), child.DesiredSize);
+            if (diff != Size.Empty)
                 _measureRequired = true;
             return child.DesiredSize.Height;
         }
