@@ -9,39 +9,39 @@ using Avalonia.Diagnostics;
 namespace Avalonia.Collections
 {
 
-    public class GroupingView : IAvaloniaList<object>, IList , INotifyCollectionChanged
+    public class GroupingView :IEnumerable,  INotifyCollectionChanged
     {
 
         #region Properties
         public bool IsGrouping => Items.IsGrouping;
         public GroupingViewInternal Items { get; set; }
 
-        #region IAvaloniaList<object> Properties
-        public int Count => ((IAvaloniaList<object>)Items).Count;
+        //#region IAvaloniaList<object> Properties
+        //public int Count => ((IAvaloniaList<object>)Items).Count;
 
-        public bool IsReadOnly => ((ICollection<object>)Items).IsReadOnly;
+        //public bool IsReadOnly => ((ICollection<object>)Items).IsReadOnly;
 
-        object IReadOnlyList<object>.this[int index] => ((IReadOnlyList<object>)Items)[index];
+        //object IReadOnlyList<object>.this[int index] => ((IReadOnlyList<object>)Items)[index];
 
-        public object this[int index] { get => ((IAvaloniaList<object>)Items)[index]; set => ((IAvaloniaList<object>)Items)[index] = value; }
+        //public object this[int index] { get => ((IAvaloniaList<object>)Items)[index]; set => ((IAvaloniaList<object>)Items)[index] = value; }
 
-        #endregion
+        //#endregion
 
-        #region IList Properties
-        bool IList.IsFixedSize => throw new NotImplementedException();
+        //#region IList Properties
+        //bool IList.IsFixedSize => throw new NotImplementedException();
 
-        bool ICollection.IsSynchronized => throw new NotImplementedException();
+        //bool ICollection.IsSynchronized => throw new NotImplementedException();
 
-        object ICollection.SyncRoot => throw new NotImplementedException();
+        //object ICollection.SyncRoot => throw new NotImplementedException();
 
-        bool IList.IsReadOnly => throw new NotImplementedException();
+        //bool IList.IsReadOnly => throw new NotImplementedException();
 
-        int ICollection.Count => Count;
+        //int ICollection.Count => Count;
 
-        object IList.this[int index] { get => this[index]; set => this[index]=value; }
+        //object IList.this[int index] { get => this[index]; set => this[index]=value; }
 
 
-        #endregion
+        //#endregion
 
         #endregion
 
@@ -87,81 +87,6 @@ namespace Avalonia.Collections
             _groupPaths.Add(groupPath);
         }
 
-        #region IAvaloniaList<object> Methods
-        public void AddRange(IEnumerable<object> items)
-        {
-            ((IAvaloniaList<object>)Items).AddRange(items);
-        }
-
-        public void InsertRange(int index, IEnumerable<object> items)
-        {
-            ((IAvaloniaList<object>)Items).InsertRange(index, items);
-        }
-
-        public void Move(int oldIndex, int newIndex)
-        {
-            ((IAvaloniaList<object>)Items).Move(oldIndex, newIndex);
-        }
-
-        public void MoveRange(int oldIndex, int count, int newIndex)
-        {
-            ((IAvaloniaList<object>)Items).MoveRange(oldIndex, count, newIndex);
-        }
-
-        public void RemoveAll(IEnumerable<object> items)
-        {
-            ((IAvaloniaList<object>)Items).RemoveAll(items);
-        }
-
-        public void RemoveRange(int index, int count)
-        {
-            ((IAvaloniaList<object>)Items).RemoveRange(index, count);
-        }
-
-        public int IndexOf(object item)
-        {
-            return ((IList<object>)Items).IndexOf(item);
-        }
-
-        public void Insert(int index, object item)
-        {
-            ((IList<object>)Items).Insert(index, item);
-        }
-
-        public void RemoveAt(int index)
-        {
-            ((IList<object>)Items).RemoveAt(index);
-        }
-
-        public void Add(object item)
-        {
-            _flatList.Add(item);
-            AddToHierarchy(item);
-        }
-
-        public void Clear()
-        {
-            ((ICollection<object>)Items).Clear();
-        }
-
-        public bool Contains(object item)
-        {
-            return ((ICollection<object>)Items).Contains(item);
-        }
-
-        public void CopyTo(object[] array, int arrayIndex)
-        {
-            ((ICollection<object>)Items).CopyTo(array, arrayIndex);
-        }
-
-        public bool Remove(object item)
-        {
-            _flatList.Remove(item);
-            return RemoveFromHierarchy(item);
-        }
-
-        #endregion
-
         #endregion
 
         #region IAvaloniaList<object> Enumerators
@@ -177,83 +102,159 @@ namespace Avalonia.Collections
         #endregion
 
         #region Private Methods
-        private int AddToHierarchy(object value)
-        {
-            return ((IList)Items).Add(value);
-        }
-        private bool RemoveFromHierarchy(object value)
-        {
-            return Items.Remove(value);
-        }
+        //private int Add(object value)
+        //{
+        //    return ((IList)Items).Add(value);
+        //}
+        //private bool Remove(object value)
+        //{
+        //    return Items.Remove(value);
+        //}
         private void FlatCollectioChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             switch (e.Action)
             {
                 case NotifyCollectionChangedAction.Add:
-                    foreach (var item in e.NewItems)
-                        AddToHierarchy(item);
+//                    foreach (var item in e.NewItems)
+                        Items.AddRange(e.NewItems);
                     break;
                 case NotifyCollectionChangedAction.Move:
                     break;
                 case NotifyCollectionChangedAction.Remove:
                     foreach (var item in e.OldItems)
-                        RemoveFromHierarchy(item);
+                        Items.Remove(item);
                     break;
                 case NotifyCollectionChangedAction.Replace:
                     break;
                 case NotifyCollectionChangedAction.Reset:
-                    Clear();
+                    Items.Clear();
                     break;
                 default:
                     break;
             }
         }
+        #endregion
 
-        #region IList
-        int IList.Add(object value)
-        {
-            int index = Count;
-            Add(value);
-            return index;
-        }
+        #region IAvaloniaList<object> Methods
+        //private void AddRange(IEnumerable<object> items)
+        //{
+        //    ((IAvaloniaList<object>)Items).AddRange(items);
+        //}
 
-        void IList.Clear()
-        {
-            throw new NotImplementedException();
-        }
+        //private void InsertRange(int index, IEnumerable<object> items)
+        //{
+        //    ((IAvaloniaList<object>)Items).InsertRange(index, items);
+        //}
 
-        bool IList.Contains(object value)
-        {
-            throw new NotImplementedException();
-        }
+        //private void Move(int oldIndex, int newIndex)
+        //{
+        //    ((IAvaloniaList<object>)Items).Move(oldIndex, newIndex);
+        //}
 
-        int IList.IndexOf(object value)
-        {
-            throw new NotImplementedException();
-        }
+        //private void MoveRange(int oldIndex, int count, int newIndex)
+        //{
+        //    ((IAvaloniaList<object>)Items).MoveRange(oldIndex, count, newIndex);
+        //}
 
-        void IList.Insert(int index, object value)
-        {
-            throw new NotImplementedException();
-        }
+        //private void RemoveAll(IEnumerable<object> items)
+        //{
+        //    ((IAvaloniaList<object>)Items).RemoveAll(items);
+        //}
 
-        void IList.Remove(object value)
-        {
-            throw new NotImplementedException();
-        }
+        //private void RemoveRange(int index, int count)
+        //{
+        //    ((IAvaloniaList<object>)Items).RemoveRange(index, count);
+        //}
 
-        void IList.RemoveAt(int index)
-        {
-            throw new NotImplementedException();
-        }
+        //private int IndexOf(object item)
+        //{
+        //    return ((IList<object>)Items).IndexOf(item);
+        //}
 
-        void ICollection.CopyTo(Array array, int index)
-        {
-            throw new NotImplementedException();
-        }
+        //private void Insert(int index, object item)
+        //{
+        //    ((IList<object>)Items).Insert(index, item);
+        //}
+
+        //private void RemoveAt(int index)
+        //{
+        //    ((IList<object>)Items).RemoveAt(index);
+        //}
+
+        //private void Add(object item)
+        //{
+        //    _flatList.Add(item);
+        //    AddToHierarchy(item);
+        //}
+
+        //private void Clear()
+        //{
+        //    Items.Clear();
+        //}
+
+        //private bool Contains(object item)
+        //{
+        //    return ((ICollection<object>)Items).Contains(item);
+        //}
+
+        //private void CopyTo(object[] array, int arrayIndex)
+        //{
+        //    ((ICollection<object>)Items).CopyTo(array, arrayIndex);
+        //}
+
+        //private bool Remove(object item)
+        //{
+        //    _flatList.Remove(item);
+        //    return RemoveFromHierarchy(item);
+        //}
 
         #endregion
-        #endregion
+
+
+        //#region IList
+        //int IList.Add(object value)
+        //{
+        //    int index = Count;
+        //    Add(value);
+        //    return index;
+        //}
+
+        //void IList.Clear()
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        //bool IList.Contains(object value)
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        //int IList.IndexOf(object value)
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        //void IList.Insert(int index, object value)
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        //void IList.Remove(object value)
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        //void IList.RemoveAt(int index)
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        //void ICollection.CopyTo(Array array, int index)
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        //#endregion
 
     }
 
