@@ -69,84 +69,6 @@ namespace Avalonia.Collections
 
         #endregion
 
-        //public bool IsFixedSize => ((IList)_items).IsFixedSize;
-
-        //public bool IsReadOnly => ((IList)_items).IsReadOnly;
-
-        //public int Count => ((ICollection)_items).Count;
-
-        //public bool IsSynchronized => ((ICollection)_items).IsSynchronized;
-
-        //public object SyncRoot => ((ICollection)_items).SyncRoot;
-
-        //public object this[int index] { get => ((IList)_items)[index]; set => ((IList)_items)[index] = value; }
-
-        //public int Add(object value)
-        //{
-        //    if (IsGrouping)
-        //    {
-        //        var groupListItem = GetGroup(value, out var newlyCreated, out var indx);
-        //        groupListItem.Add(value);
-        //        if (newlyCreated)
-        //            NotifyAdd(groupListItem, indx);
-        //        return indx;
-        //    }
-        //    else
-        //    {
-        //        var indx= _items.Add(value);
-        //        NotifyAdd(value, indx);
-        //        return indx;
-        //    }
-        //}
-
-        // public void Clear()
-        //{
-        //    ((IList)_items).Clear();
-        //}
-
-        //public bool Contains(object value)
-        //{
-        //    return ((IList)_items).Contains(value);
-        //}
-
-        //public int IndexOf(object value)
-        //{
-        //    return ((IList)_items).IndexOf(value);
-        //}
-
-        //public void Insert(int index, object value)
-        //{
-        //    ((IList)_items).Insert(index, value);
-        //}
-
-        //public void Remove(object value)
-        //{
-        //    if (IsGrouping)
-        //    {
-        //        var groupListItem = GetGroup(value,out var _, out var _);
-        //        groupListItem.Remove(value);
-        //        if (groupListItem.ItemCount == 0)
-        //            RemoveAndNotify(groupListItem);
-        //    }
-        //    else
-        //        RemoveAndNotify(value);
-        //}
-
-        //public void RemoveAt(int index)
-        //{
-        //    ((IList)_items).RemoveAt(index);
-        //}
-
-        //public void CopyTo(Array array, int index)
-        //{
-        //    ((ICollection)_items).CopyTo(array, index);
-        //}
-
-        //public IEnumerator GetEnumerator()
-        //{
-        //    return ((IEnumerable)_items).GetEnumerator();
-        //}
-
         #region IAvaloniaList<object> Methods
         public void AddRange(IEnumerable<object> items)
         {
@@ -180,16 +102,19 @@ namespace Avalonia.Collections
 
         public void InsertRange(int index, IEnumerable<object> items)
         {
+            throw new NotSupportedException();
             ((IAvaloniaList<object>)_items).InsertRange(index, items);
         }
 
         public void Move(int oldIndex, int newIndex)
         {
+            throw new NotSupportedException();
             ((IAvaloniaList<object>)_items).Move(oldIndex, newIndex);
         }
 
         public void MoveRange(int oldIndex, int count, int newIndex)
         {
+            throw new NotSupportedException();
             ((IAvaloniaList<object>)_items).MoveRange(oldIndex, count, newIndex);
         }
 
@@ -200,6 +125,7 @@ namespace Avalonia.Collections
 
         public void RemoveRange(int index, int count)
         {
+            throw new NotSupportedException();
             ((IAvaloniaList<object>)_items).RemoveRange(index, count);
         }
 
@@ -236,7 +162,13 @@ namespace Avalonia.Collections
 
         public void Clear()
         {
+            if (IsGrouping)
+            {
+                foreach (var group in _items)
+                    ((GroupingViewInternal)group).Clear();
+            }
             ((ICollection<object>)_items).Clear();
+            NotifyReset();
         }
 
         public bool Contains(object item)
@@ -322,6 +254,15 @@ namespace Avalonia.Collections
         }
 
         private static int _notifyCount;
+        private void NotifyReset()
+        {
+            if (_collectionChanged != null)
+            {
+                var e = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset);
+                _collectionChanged(this, e);
+            }
+            RaisePropertyChanged("ItemCount");
+        }
         private void NotifyRemove(object item, int index)
         {
             if (_collectionChanged != null)

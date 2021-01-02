@@ -64,116 +64,6 @@ namespace Avalonia.Collections
         private AvaloniaList<object> _flatList;
         #endregion
 
-        //#region IList
-        //public bool IsFixedSize => ((IList)Items).IsFixedSize;
-
-        //public bool IsReadOnly => ((IList)Items).IsReadOnly;
-
-        //public int Count => ((ICollection)Items).Count;
-
-        //public bool IsSynchronized => ((ICollection)Items).IsSynchronized;
-
-        //public object SyncRoot => ((ICollection)Items).SyncRoot;
-
-        //public object this[int index] { get => ((IList)Items)[index]; set => ((IList)Items)[index] = value; }
-
-        //public int Add(object value)
-        //{
-        //    _flatList.Add(value);
-        //    return AddToGroup(value);
-        //}
-
-        //public void Clear()
-        //{
-        //    ((IList)Items).Clear();
-        //}
-
-        //public bool Contains(object value)
-        //{
-        //    return ((IList)Items).Contains(value);
-        //}
-
-        //public int IndexOf(object value)
-        //{
-        //    return ((IList)Items).IndexOf(value);
-        //}
-
-        //public void Insert(int index, object value)
-        //{
-        //    ((IList)Items).Insert(index, value);
-        //}
-
-        //public void Remove(object value)
-        //{
-        //    _flatList.Remove(value);
-        //    RemoveFromGroup(value);
-        //}
-
-        //public void RemoveAt(int index)
-        //{
-        //    ((IList)Items).RemoveAt(index);
-        //}
-
-        //public void CopyTo(Array array, int index)
-        //{
-        //    ((ICollection)Items).CopyTo(array, index);
-        //}
-
-        //public IEnumerator GetEnumerator()
-        //{
-        //    return ((IEnumerable)Items).GetEnumerator();
-        //}
-
-        //public void AddRange(IEnumerable<object> items)
-        //{
-        //    ((IAvaloniaList<object>)Items).AddRange(items);
-        //}
-
-        //public void InsertRange(int index, IEnumerable<object> items)
-        //{
-        //    ((IAvaloniaList<object>)Items).InsertRange(index, items);
-        //}
-
-        //public void Move(int oldIndex, int newIndex)
-        //{
-        //    ((IAvaloniaList<object>)Items).Move(oldIndex, newIndex);
-        //}
-
-        //public void MoveRange(int oldIndex, int count, int newIndex)
-        //{
-        //    ((IAvaloniaList<object>)Items).MoveRange(oldIndex, count, newIndex);
-        //}
-
-        //public void RemoveAll(IEnumerable<object> items)
-        //{
-        //    ((IAvaloniaList<object>)Items).RemoveAll(items);
-        //}
-
-        //public void RemoveRange(int index, int count)
-        //{
-        //    ((IAvaloniaList<object>)Items).RemoveRange(index, count);
-        //}
-
-        //void ICollection<object>.Add(object item)
-        //{
-        //    ((ICollection<object>)Items).Add(item);
-        //}
-
-        //public void CopyTo(object[] array, int arrayIndex)
-        //{
-        //    ((ICollection<object>)Items).CopyTo(array, arrayIndex);
-        //}
-
-        //bool ICollection<object>.Remove(object item)
-        //{
-        //    return ((ICollection<object>)Items).Remove(item);
-        //}
-
-        //IEnumerator<object> IEnumerable<object>.GetEnumerator()
-        //{
-        //    return ((IEnumerable<object>)Items).GetEnumerator();
-        //}
-        //#endregion
         /// <summary>
         /// Initializes a new instance of the <see cref="GroupingView"/> class.
         /// </summary>
@@ -312,6 +202,7 @@ namespace Avalonia.Collections
                 case NotifyCollectionChangedAction.Replace:
                     break;
                 case NotifyCollectionChangedAction.Reset:
+                    Clear();
                     break;
                 default:
                     break;
