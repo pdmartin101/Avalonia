@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
@@ -51,6 +50,22 @@ namespace Avalonia.Collections
 
         #region Collection Methods
 
+        internal void Add(object item)
+        {
+            if (IsGrouping)
+            {
+                var groupListItem = GetGroupForAdd(item, out var newlyCreated, out var indx);
+                groupListItem.Add(item);
+                if (newlyCreated)
+                    NotifyAdd(groupListItem, indx);
+            }
+            else
+            {
+                var indx = ((IList)_items).Add(item);
+                NotifyAdd(item, indx);
+            }
+        }
+
         internal void AddRange(IList items)
         {
             var tempList = new List<object>();
@@ -67,7 +82,7 @@ namespace Avalonia.Collections
                 var newlyCreatedGroups = new List<GroupingViewInternal>();
                 foreach (var item in items)
                 {
-                    var groupListItem = GetGroup(item, out var newlyCreated, out _);
+                    var groupListItem = GetGroupForAdd(item, out var newlyCreated, out _);
                     if (!hiearchyList.TryGetValue(groupListItem, out var groupItems))
                     {
                         groupItems = new List<object>();
@@ -83,9 +98,61 @@ namespace Avalonia.Collections
             }
             else
             {
-                ((IAvaloniaList<object>)_items).AddRange(items);
+                _items.AddRange(items);
                 NotifyAddRange((IList)items, indx);
             }
+        }
+
+        internal bool Remove(object item)
+        {
+            if (IsGrouping)
+            {
+                if (GetGroupForRemove(item, out var groupListItem))
+                {
+                    var rem = groupListItem.Remove(item);
+                    if (groupListItem.Count == 0)
+                        RemoveGroupAndNotify(groupListItem);
+                    return rem;
+                }
+                return false;
+            }
+            else
+                return RemoveAndNotify(item);
+        }
+        internal void RemoveRange(IList items)
+        {
+            var tempList = new List<object>();
+            foreach (var item in items)
+                tempList.Add(item);
+            RemoveRangeImpl(tempList);
+        }
+        private void RemoveRangeImpl(IEnumerable<object> items)
+        {
+            if (IsGrouping)
+            {
+                Dictionary<GroupingViewInternal, List<object>> hiearchyList = new Dictionary<GroupingViewInternal, List<object>>();
+                var deletedGroups = new List<GroupingViewInternal>();
+                foreach (var item in items)
+                {
+                    if (GetGroupForRemove(item, out var groupListItem))
+                    {
+                        if (!hiearchyList.TryGetValue(groupListItem, out var groupItems))
+                        {
+                            groupItems = new List<object>();
+                            hiearchyList.Add(groupListItem, groupItems);
+                        }
+                        groupItems.Add(item);
+                    }
+                }
+                foreach (var group in hiearchyList)
+                {
+                    group.Key.RemoveRangeImpl(group.Value);
+                    if (group.Key.Count==0)
+                        RemoveGroupAndNotify(group.Key);
+                }
+            }
+            else
+                RemoveRangeAndNotify(items);
         }
 
         private int IndexOf(object item)
@@ -96,22 +163,6 @@ namespace Avalonia.Collections
         private void RemoveAt(int index)
         {
             ((IList<object>)_items).RemoveAt(index);
-        }
-
-        internal void Add(object item)
-        {
-            if (IsGrouping)
-            {
-                var groupListItem = GetGroup(item, out var newlyCreated, out var indx);
-                groupListItem.Add(item);
-                if (newlyCreated)
-                    NotifyAdd(groupListItem, indx);
-            }
-            else
-            {
-                var indx = ((IList)_items).Add(item);
-                NotifyAdd(item, indx);
-            }
         }
 
         internal void Clear()
@@ -128,19 +179,6 @@ namespace Avalonia.Collections
             NotifyReset();
         }
 
-        internal bool Remove(object item)
-        {
-            if (IsGrouping)
-            {
-                var groupListItem = GetGroup(item, out var _, out var _);
-                var rem = groupListItem.Remove(item);
-                if (groupListItem.Count == 0)
-                    RemoveGroup(groupListItem);
-                return rem;
-            }
-            else
-                return RemoveAndNotify(item);
-        }
         #endregion
 
         #region IAvaloniaList<object> Enumerators
@@ -157,6 +195,16 @@ namespace Avalonia.Collections
         #endregion
 
         #region Private Methods
+        private void RemoveGroupAndNotify(GroupingViewInternal groupListItem)
+        {
+            _groupIds.Remove(groupListItem.Name);
+            RemoveAndNotify(groupListItem);
+        }
+        private void RemoveRangeAndNotify(IEnumerable items)
+        {
+            foreach (var item in items)
+                RemoveAndNotify(item);
+        }
         private bool RemoveAndNotify(object value)
         {
             int index = IndexOf(value);
@@ -176,7 +224,7 @@ namespace Avalonia.Collections
                 groupValue = _groupPaths[_groupLevel].NullStr;
             return groupValue;
         }
-        private GroupingViewInternal GetGroup(object item, out bool newlyCreated, out int indx)
+        private GroupingViewInternal GetGroupForAdd(object item, out bool newlyCreated, out int indx)
         {
             var groupValue = GetGroupValue(item);
             newlyCreated = false;
@@ -190,11 +238,10 @@ namespace Avalonia.Collections
             }
             return groupListItem;
         }
-
-        private void RemoveGroup(GroupingViewInternal groupListItem)
+        private bool GetGroupForRemove(object item, out GroupingViewInternal group)
         {
-            _groupIds.Remove(groupListItem.Name);
-            RemoveAndNotify(groupListItem);
+            var groupValue = GetGroupValue(item);
+            return _groupIds.TryGetValue(groupValue, out group);
         }
 
         private static int _notifyCount;
@@ -205,7 +252,7 @@ namespace Avalonia.Collections
                 var e = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset);
                 _collectionChanged(this, e);
             }
-            RaisePropertyChanged("ItemCount");
+            RaisePropertyChanged(nameof(Count));
         }
         private void NotifyRemove(object item, int index)
         {
@@ -214,7 +261,7 @@ namespace Avalonia.Collections
                 var e = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, new[] { item }, index);
                 _collectionChanged(this, e);
             }
-            RaisePropertyChanged("ItemCount");
+            RaisePropertyChanged(nameof(Count));
         }
         private void NotifyAdd(object item, int index)
         {
@@ -224,7 +271,7 @@ namespace Avalonia.Collections
                 var e = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, new[] { item }, index);
                 _collectionChanged(this, e);
             }
-            RaisePropertyChanged("ItemCount");
+            RaisePropertyChanged(nameof(Count));
         }
         private void NotifyAddRange(IList items, int index)
         {
@@ -234,7 +281,7 @@ namespace Avalonia.Collections
                 var e = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, items, index);
                 _collectionChanged(this, e);
             }
-            RaisePropertyChanged("ItemCount");
+            RaisePropertyChanged(nameof(Count));
         }
 
         #endregion
