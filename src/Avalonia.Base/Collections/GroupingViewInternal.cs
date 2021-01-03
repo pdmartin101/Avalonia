@@ -178,6 +178,23 @@ namespace Avalonia.Collections
             _items.Clear();
             NotifyReset();
         }
+        internal void ClearFrom(int level)
+        {
+            if (IsGrouping)
+            {
+                foreach (var group in _items)
+                {
+                    ((GroupingViewInternal)group).ClearFrom(level);
+                    if (level <= _groupLevel)
+                        _groupIds.Remove(((GroupingViewInternal)group).Name);
+                }
+            }
+            if (level <= _groupLevel)
+            {
+                _items.Clear();
+                NotifyReset();
+            }
+        }
 
         #endregion
 

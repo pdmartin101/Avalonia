@@ -45,7 +45,7 @@ namespace Avalonia.Collections
             _flatList.CollectionChanged += FlatCollectioChanged;
             _groupPaths = new List<GroupPathInfo>();
             _groupPaths.Add(new GroupPathInfo { GroupPath = "Group", NullStr = "No Group" });
-            _groupPaths.Add(new GroupPathInfo { GroupPath = "Name", NullStr = "No Name" });
+            //_groupPaths.Add(new GroupPathInfo { GroupPath = "Name", NullStr = "No Name" });
             Items = new GroupingViewInternal(_groupPaths,"Root",0);
         }
 
@@ -54,7 +54,22 @@ namespace Avalonia.Collections
         #region Public Methods
         public void AddGroup(GroupPathInfo groupPath)
         {
+            Items.ClearFrom(_groupPaths.Count - 1);   // -1 due to ItemsGenerator changing to GroupGenerator in the ItemsPresenter
             _groupPaths.Add(groupPath);
+            Items.AddRange(_flatList);
+        }
+
+        public void RemoveGroup(int indx)
+        {
+            if (indx > 0 && indx < _groupPaths.Count)
+            {
+                var clearFrom = indx;
+                if (clearFrom == (_groupPaths.Count - 1))
+                    clearFrom--;  // -1 due to GroupGenerator changing to ItemsGenerator in the ItemsPresenter
+                Items.ClearFrom(clearFrom);
+                _groupPaths.RemoveAt(indx);
+                Items.AddRange(_flatList);
+            }
         }
 
         #endregion

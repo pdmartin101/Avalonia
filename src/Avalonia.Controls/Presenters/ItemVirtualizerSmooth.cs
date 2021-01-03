@@ -137,7 +137,7 @@ namespace Avalonia.Controls.Presenters
             var generator = Owner.ItemContainerGenerator;
             if (_itemsPresenter.Bounds.Size.IsDefault)
             {
-                if ((Items.Count() > 0) && !_estimated)
+                if ((Items.Count() > 0))// && !_estimated)
                 {
                     var materialized = generator.Materialize(0, Items.ElementAt(0));
                     VirtualizingPanel.Children.Insert(0, materialized.ContainerControl);
