@@ -18,7 +18,7 @@ namespace Avalonia.Collections
         #endregion
 
         #region Private Data
-        private List<GroupPathInfo> _groupPaths;
+        private List<GroupDescription> _groupPaths;
         private int _groupLevel = 0;
         private event NotifyCollectionChangedEventHandler _collectionChanged;
         private AvaloniaList<object> _items { get; set; } = new AvaloniaList<object>();
@@ -38,7 +38,7 @@ namespace Avalonia.Collections
         #endregion
 
         #region Constructor(s)
-        public GroupingViewInternal(List<GroupPathInfo> groupPaths,object groupValue, int level)
+        public GroupingViewInternal(List<GroupDescription> groupPaths,object groupValue, int level)
         {
             _items = new AvaloniaList<object>();
             _groupPaths = groupPaths;
