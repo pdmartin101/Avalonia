@@ -19,7 +19,8 @@
                           ItemsPanel="{TemplateBinding ItemsPanel}"
                           ItemTemplate="{TemplateBinding ItemTemplate}"
                           Margin="{TemplateBinding Padding}"
-                          VirtualizationMode="{TemplateBinding VirtualizationMode}"/>
+                          VirtualizationMode="{TemplateBinding VirtualizationMode}"
+                          VirtualizingCache="{TemplateBinding VirtualizingCache}"/>
         </ScrollViewer>
       </Border>
     </ControlTemplate>
