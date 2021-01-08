@@ -94,7 +94,7 @@ namespace Avalonia.Controls
         protected override Size ArrangeOverride(Size finalSize)
         {
             _availableSpace = finalSize;
-            if ((Controller is ItemVirtualizerSmooth) || (Controller is ItemVirtualizerLogical) || (Controller is ItemVirtualizerGroup))
+            if ((Controller is ItemVirtualizerSmooth) || (Controller is ItemVirtualizerLogical))
             {
                 Controller?.UpdateControls();
                 return finalSize;
@@ -112,7 +112,7 @@ namespace Avalonia.Controls
         protected override void ChildrenChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             base.ChildrenChanged(sender, e);
-            if ((Controller is ItemVirtualizerSmooth) || (Controller is ItemVirtualizerLogical) || (Controller is ItemVirtualizerGroup))
+            if ((Controller is ItemVirtualizerSmooth) || (Controller is ItemVirtualizerLogical))
                 return;
 
             switch (e.Action)
