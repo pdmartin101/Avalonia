@@ -19,6 +19,11 @@ namespace Avalonia.Controls.Presenters
                 nameof(VirtualizationMode),
                 defaultValue: ItemVirtualizationMode.None);
 
+        public static readonly StyledProperty<ItemVirtualizingCache> VirtualizingCacheProperty =
+            AvaloniaProperty.Register<ItemsPresenter, ItemVirtualizingCache>(
+                nameof(VirtualizingCache),
+                defaultValue: null);
+
         private bool _canHorizontallyScroll;
         private bool _canVerticallyScroll;
         private EventHandler _scrollInvalidated;
@@ -43,6 +48,15 @@ namespace Avalonia.Controls.Presenters
         {
             get { return GetValue(VirtualizationModeProperty); }
             set { SetValue(VirtualizationModeProperty, value); }
+        }
+
+        /// <summary>
+        /// Gets or sets the virtualizing cache.
+        /// </summary>
+        public ItemVirtualizingCache VirtualizingCache
+        {
+            get { return GetValue(VirtualizingCacheProperty); }
+            set { SetValue(VirtualizingCacheProperty, value); }
         }
 
         /// <summary>

@@ -22,10 +22,10 @@ namespace Avalonia.Collections
             get { return _source; }
             set { SetSource(value); }
         }
-        public List<GroupDescription> GroupPaths
+        public List<GroupDescription> GroupDescriptions
         {
-            get { return _groupPaths; }
-            set { SetGroups(value); }
+            get { return _groupDescriptions; }
+            set { SetGroupDescriptions(value); }
         }
         public int Test
         {
@@ -50,7 +50,7 @@ namespace Avalonia.Collections
         #endregion
 
         #region Private Data
-        private List<GroupDescription> _groupPaths;
+        private List<GroupDescription> _groupDescriptions;
         private AvaloniaList<object> _source = new AvaloniaList<object>();
         private int _test = 77;
         #endregion
@@ -71,10 +71,10 @@ namespace Avalonia.Collections
         //}
         public GroupingView()
         {
-            _groupPaths = new List<GroupDescription>();
+            _groupDescriptions = new List<GroupDescription>();
             //_groupPaths.Add(new GroupPathInfo { GroupPath = "Group", NullStr = "No Group" });
             //_groupPaths.Add(new GroupPathInfo { GroupPath = "Name", NullStr = "No Name" });
-            Items = new GroupingViewInternal(_groupPaths, "Root", 0);
+            Items = new GroupingViewInternal(_groupDescriptions, "Root", 0);
         }
 
         #endregion
@@ -82,20 +82,20 @@ namespace Avalonia.Collections
         #region Public Methods
         public void AddGroup(GroupDescription groupPath)
         {
-            Items.ClearFrom(_groupPaths.Count - 1);   // -1 due to ItemsGenerator changing to GroupGenerator in the ItemsPresenter
-            _groupPaths.Add(groupPath);
+            Items.ClearFrom(_groupDescriptions.Count - 1);   // -1 due to ItemsGenerator changing to GroupGenerator in the ItemsPresenter
+            _groupDescriptions.Add(groupPath);
             Items.AddRange(Source);
         }
 
         public void RemoveGroup(int indx)
         {
-            if (indx > 0 && indx < _groupPaths.Count)
+            if (indx > 0 && indx < _groupDescriptions.Count)
             {
                 var clearFrom = indx;
-                if (clearFrom == (_groupPaths.Count - 1))
+                if (clearFrom == (_groupDescriptions.Count - 1))
                     clearFrom--;  // -1 due to GroupGenerator changing to ItemsGenerator in the ItemsPresenter
                 Items.ClearFrom(clearFrom);
-                _groupPaths.RemoveAt(indx);
+                _groupDescriptions.RemoveAt(indx);
                 Items.AddRange(Source);
             }
         }
@@ -115,15 +115,20 @@ namespace Avalonia.Collections
         #endregion
 
         #region Private Methods
+
+        void ReSortAll()
+        {
+
+        }
         private void SetSource(AvaloniaList<object> value)
         {
             _source = value;
             if (value != null)
                 Items.AddRange(value);
         }
-        private void SetGroups(List<GroupDescription> value)
+        private void SetGroupDescriptions(List<GroupDescription> value)
         {
-            _groupPaths = value;
+            _groupDescriptions = value;
         }
         private void SetTest(int value)
         {

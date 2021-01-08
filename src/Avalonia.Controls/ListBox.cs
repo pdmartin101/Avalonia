@@ -50,6 +50,12 @@ namespace Avalonia.Controls
         public static readonly StyledProperty<ItemVirtualizationMode> VirtualizationModeProperty =
             ItemsPresenter.VirtualizationModeProperty.AddOwner<ListBox>();
 
+        /// <summary>
+        /// Defines the <see cref="VirtualizingCache"/> property.
+        /// </summary>
+        public static readonly StyledProperty<ItemVirtualizingCache> VirtualizingCacheProperty =
+            ItemsPresenter.VirtualizingCacheProperty.AddOwner<ListBox>();
+
         private IScrollable _scroll;
 
         /// <summary>
@@ -59,6 +65,7 @@ namespace Avalonia.Controls
         {
             ItemsPanelProperty.OverrideDefaultValue<ListBox>(DefaultPanel);
             VirtualizationModeProperty.OverrideDefaultValue<ListBox>(ItemVirtualizationMode.Simple);
+            VirtualizingCacheProperty.OverrideDefaultValue<ListBox>(new ItemVirtualizingCache());
         }
 
         /// <summary>
@@ -104,6 +111,15 @@ namespace Avalonia.Controls
         {
             get { return GetValue(VirtualizationModeProperty); }
             set { SetValue(VirtualizationModeProperty, value); }
+        }
+
+        /// <summary>
+        /// Gets or sets the virtualization cache for the items.
+        /// </summary>
+        public ItemVirtualizingCache VirtualizingCache
+        {
+            get { return GetValue(VirtualizingCacheProperty); }
+            set { SetValue(VirtualizingCacheProperty, value); }
         }
 
         /// <summary>
