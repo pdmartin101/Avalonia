@@ -6,17 +6,25 @@ using System.ComponentModel;
 namespace Avalonia.Collections
 {
 
-    public class GroupingView : AvaloniaObject,IEnumerable,  INotifyCollectionChanged
+    public class GroupingView : AvaloniaObject, IEnumerable, INotifyCollectionChanged
     {
         public static readonly DirectProperty<GroupingView, int> TestProperty =
             AvaloniaProperty.RegisterDirect<GroupingView, int>(nameof(Test), o => o.Test, (o, v) => o.Test = v);
         public static readonly DirectProperty<GroupingView, AvaloniaList<object>> SourceProperty =
             AvaloniaProperty.RegisterDirect<GroupingView, AvaloniaList<object>>(nameof(Source), o => o.Source, (o, v) => o.Source = v);
 
-
+        public static Dictionary<string, GroupingView> GroupingViews = new Dictionary<string, GroupingView>();
         #region Properties
         public bool IsGrouping => Items.IsGrouping;
         public GroupingViewInternal Items { get; private set; }
+        public string Id { get => _id; set => SetId(value); }
+
+        private void SetId(string value)
+        {
+            _id = value;
+            GroupingViews.Add(_id, this);
+        }
+
         public AvaloniaList<object> Source
         {
             get { return _source; }
@@ -53,6 +61,7 @@ namespace Avalonia.Collections
         private List<GroupDescription> _groupDescriptions;
         private AvaloniaList<object> _source = new AvaloniaList<object>();
         private int _test = 77;
+        private string _id;
         #endregion
 
         #region Constructor(s)
@@ -72,8 +81,6 @@ namespace Avalonia.Collections
         public GroupingView()
         {
             _groupDescriptions = new List<GroupDescription>();
-            //_groupPaths.Add(new GroupPathInfo { GroupPath = "Group", NullStr = "No Group" });
-            //_groupPaths.Add(new GroupPathInfo { GroupPath = "Name", NullStr = "No Name" });
             Items = new GroupingViewInternal(_groupDescriptions, "Root", 0);
         }
 
@@ -124,7 +131,10 @@ namespace Avalonia.Collections
         {
             _source = value;
             if (value != null)
+            {
+                _source.CollectionChanged += FlatCollectioChanged;
                 Items.AddRange(value);
+            }
         }
         private void SetGroupDescriptions(List<GroupDescription> value)
         {
