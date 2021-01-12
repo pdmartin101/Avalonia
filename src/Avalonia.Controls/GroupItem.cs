@@ -67,10 +67,16 @@ namespace Avalonia.Controls
                 this,
                 ListBoxItem.ContentProperty,
                 ListBoxItem.ContentTemplateProperty);
-            GroupParent.SetItemContainerGenerator(container);
+ //           GroupParent.SetItemContainerGenerator(container);
             return container;
         }
 
+        protected override Size MeasureOverride(Size availableSize)
+        {
+            //System.Console.WriteLine($"PresenterInvalidate");
+            //Presenter.InvalidateMeasure();
+            return base.MeasureOverride(availableSize);
+        }
         Type IStyleable.StyleKey => typeof(GroupItem);
 
         /// <summary>

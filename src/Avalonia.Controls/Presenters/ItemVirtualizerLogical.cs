@@ -37,14 +37,14 @@ namespace Avalonia.Controls.Presenters
         public override bool IsLogicalScrollEnabled => false;
 
         /// <inheritdoc/>
-        public override double ExtentValue => VirtualizingAverages.GetEstimatedExtent(VirtualizingPanel.TemplatedParent, Items, Vertical)+8;
+        public override double ExtentValue => 23;// VirtualizingAverages.GetEstimatedExtent(VirtualizingPanel.TemplatedParent, Items, Vertical)+8;
 
         /// <inheritdoc/>
         public override double OffsetValue
         {
             get
             {
-                return _currentState.FirstInView * VirtualizingAverages.GetEstimatedAverage(VirtualizingPanel.TemplatedParent,Items,Vertical) + _currentState.Margin;
+                return 56;// _currentState.FirstInView * VirtualizingAverages.GetEstimatedAverage(VirtualizingPanel.TemplatedParent,Items,Vertical) + _currentState.Margin;
             }
 
             set
@@ -59,7 +59,7 @@ namespace Avalonia.Controls.Presenters
         {
             get
             {
-                return _currentState.NumInFullView * VirtualizingAverages.GetEstimatedAverage(VirtualizingPanel.TemplatedParent, Items, Vertical);
+                return 56;// _currentState.NumInFullView * VirtualizingAverages.GetEstimatedAverage(VirtualizingPanel.TemplatedParent, Items, Vertical);
             }
         }
 
@@ -71,8 +71,8 @@ namespace Avalonia.Controls.Presenters
             var estimatedSize = VirtualizingAverages.GetEstimatedExtent(VirtualizingPanel.TemplatedParent, Items, Vertical);
             _realizedChildren.RemoveChildren(Vertical);
             if (VirtualizingPanel.ScrollDirection == Layout.Orientation.Vertical)
-                return new Size(s.Width, estimatedSize);
-            return new Size(estimatedSize, s.Height);
+                return estimatedSize;
+            return estimatedSize;
         }
 
         public override Size ArrangeOverride(Size finalSize)

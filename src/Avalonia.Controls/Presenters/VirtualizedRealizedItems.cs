@@ -41,6 +41,7 @@ namespace Avalonia.Controls.Presenters
             var panelOffset = vert ? rel.Value.Y: rel.Value.X;
             var hiOffset = panelOffset + (vert?_scrollViewer.Bounds.Height: _scrollViewer.Bounds.Width);
             var first = VirtualizingAverages.GetStartIndex(_panel.TemplatedParent, panelOffset, _items,vert);
+ //           first = (int)rel2.Y;
             var indx = first;
             var offset = VirtualizingAverages.GetOffsetForIndex(_panel.TemplatedParent, indx, _items,vert);
             var extra = offset - panelOffset;
@@ -80,6 +81,12 @@ namespace Avalonia.Controls.Presenters
             }
             else
             {
+                if (child is GroupItem gi)
+                {
+    //                System.Console.WriteLine($"Invalidate Presenter {gi} {gi.Items}");
+                    gi.Presenter?.InvalidateMeasure();
+                }
+                //child.InvalidateMeasure();
                 child.Measure(Size.Infinity);
 //                System.Console.WriteLine($"AddOneChild2 {_id} {indx} {_items.ElementAt(indx)} {child.DesiredSize}");
             }
