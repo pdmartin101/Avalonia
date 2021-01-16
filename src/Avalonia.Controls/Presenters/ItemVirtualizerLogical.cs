@@ -1,82 +1,99 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Specialized;
-using System.Linq;
-using Avalonia.Controls.Primitives;
+using System.Reactive.Linq;
+using Avalonia.Collections;
 using Avalonia.Controls.Utils;
-using Avalonia.Input;
-using Avalonia.Layout;
-using Avalonia.Utilities;
+using Avalonia.Styling;
 using Avalonia.VisualTree;
 
 namespace Avalonia.Controls.Presenters
 {
     /// <summary>
-    /// Handles virtualization in an <see cref="ItemsPresenter"/> for
-    /// <see cref="ItemVirtualizationMode.Simple"/>.
+    /// Represents an item virtualizer for an <see cref="ItemsPresenter"/> that doesn't actually
+    /// virtualize items - it just creates a container for every item.
     /// </summary>
     internal class ItemVirtualizerLogical : ItemVirtualizer
     {
         private VirtualizedRealizedItems _realizedChildren;
-        private RealizedChildrenInfo _currentState=new RealizedChildrenInfo();
-        private IControl _itemsPresenter;
-        private ScrollViewer _scrollViewer;
-        private int _id;
-        public static int _count = 100;
+        private RealizedChildrenInfo _currentState = new RealizedChildrenInfo();
+        private IControl ItemsPresenter;
+        //        private ScrollViewer _scrollViewer;
+        public int Id;
+        private bool _estimated;
+        private Size _estimatedSize;
+        public static int _idCount = 400;
+        public static int _count = 0;
+        Rect _lastBounds;
+        private static int _measureCount;
+        private static int _overrideCount;
+        Rect _lastBounds2;
         public ItemVirtualizerLogical(ItemsPresenter owner)
             : base(owner)
         {
-            _scrollViewer = VirtualizingPanel.Parent.Parent as ScrollViewer;
-            _scrollViewer.ScrollChanged += Scroll_ScrollChanged;
-            _itemsPresenter = VirtualizingPanel.Parent;
-            _id = _count++;
-            _realizedChildren = new VirtualizedRealizedItems(VirtualizingPanel, _scrollViewer, Items, Owner.ItemContainerGenerator,_id);
+            var scrollViewer = VirtualizingPanel.FindAncestorOfType<ScrollViewer>();
+            //            scrollViewer.ScrollChanged += Scroll_ScrollChanged;
+            ItemsPresenter = VirtualizingPanel.Parent;
+            Id = _idCount++;
+            _realizedChildren = new VirtualizedRealizedItems(VirtualizingPanel, scrollViewer, Items, Owner.ItemContainerGenerator, Id);
+            owner.GetObservable(Panel.BoundsProperty)
+                .Subscribe(x => BoundsChanged(x));
+            //           System.Console.WriteLine($"Constructing {AAA_Id}, {Items} {++_count}");
         }
 
         /// <inheritdoc/>
-        public override bool IsLogicalScrollEnabled => false;
+        public override bool IsLogicalScrollEnabled => true;
 
-        /// <inheritdoc/>
-        public override double ExtentValue => 23;// VirtualizingAverages.GetEstimatedExtent(VirtualizingPanel.TemplatedParent, Items, Vertical)+8;
+        /// <summary>
+        /// This property should never be accessed because <see cref="IsLogicalScrollEnabled"/> is
+        /// false.
+        /// </summary>
+        public override double ExtentValue
+        {
+            get=>Vertical?_estimatedSize.Height:_estimatedSize.Width;
+        }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// This property should never be accessed because <see cref="IsLogicalScrollEnabled"/> is
+        /// false.
+        /// </summary>
         public override double OffsetValue
         {
-            get
-            {
-                return 56;// _currentState.FirstInView * VirtualizingAverages.GetEstimatedAverage(VirtualizingPanel.TemplatedParent,Items,Vertical) + _currentState.Margin;
-            }
-
-            set
-            {
-//                _currentState.SetFirst(value);
-            }
-
+            get { throw new NotSupportedException(); }
+            set { throw new NotSupportedException(); }
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// This property should never be accessed because <see cref="IsLogicalScrollEnabled"/> is
+        /// false.
+        /// </summary>
         public override double ViewportValue
         {
-            get
-            {
-                return 56;// _currentState.NumInFullView * VirtualizingAverages.GetEstimatedAverage(VirtualizingPanel.TemplatedParent, Items, Vertical);
-            }
+            get { return 999; }
         }
 
+        //protected override Size GetScrollSize()
+        //{
+        //    var totalItems = (Items is IGroupingView igv) ? igv.TotalItems : _itemCount;
+        //    if (Vertical)
+        //        return new Size(50, _estimatedSize.Height / totalItems);
+        //    return new Size(_estimatedSize.Width / totalItems, 50);
+        //}
         /// <inheritdoc/>
         public override Size MeasureOverride(Size availableSize)
         {
+            System.Console.WriteLine($"Measure {Id}  {availableSize}  {++_measureCount}");
             UpdateControls();
-            var s = Owner.Panel.DesiredSize;
-            var estimatedSize = VirtualizingAverages.GetEstimatedExtent(VirtualizingPanel.TemplatedParent, Items, Vertical);
             _realizedChildren.RemoveChildren(Vertical);
+            System.Console.WriteLine($"Measured {Id}  {_estimatedSize}  {_measureCount}");
             if (VirtualizingPanel.ScrollDirection == Layout.Orientation.Vertical)
-                return estimatedSize;
-            return estimatedSize;
+                return _estimatedSize;
+            return _estimatedSize;
         }
 
         public override Size ArrangeOverride(Size finalSize)
         {
+            System.Console.WriteLine($"Override {Id}  {finalSize}  {++_overrideCount}");
             foreach (var container in _realizedChildren)
             {
                 var startOffset = VirtualizingAverages.GetOffsetForIndex(VirtualizingPanel.TemplatedParent, container.Index, Items, Vertical);
@@ -93,7 +110,7 @@ namespace Avalonia.Controls.Presenters
         public override void UpdateControls()
         {
             CreateAndRemoveContainers();
-            InvalidateScroll();
+            //InvalidateScroll();
         }
 
         /// <inheritdoc/>
@@ -101,7 +118,7 @@ namespace Avalonia.Controls.Presenters
         {
             base.ItemsChanged(items, e);
             ItemContainerSync.ItemsChanged(Owner, items, e);
-            _itemsPresenter.InvalidateMeasure();
+            ItemsPresenter.InvalidateMeasure();
         }
 
         /// <summary>
@@ -120,27 +137,48 @@ namespace Avalonia.Controls.Presenters
         private void CreateAndRemoveContainers()
         {
             var generator = Owner.ItemContainerGenerator;
-            if (_itemsPresenter.Bounds.Size.IsDefault)
+            if (ItemsPresenter.Bounds.Size.IsDefault)
             {
-                var materialized = generator.Materialize(0, Items.ElementAt(0));
-                VirtualizingPanel.Children.Insert(0, materialized.ContainerControl);
-                materialized.ContainerControl.Measure(Size.Infinity);
-                VirtualizingAverages.AddContainerSize(VirtualizingPanel.TemplatedParent, Items.ElementAt(0), materialized.ContainerControl.DesiredSize);
-                VirtualizingPanel.Children.RemoveAt(0);
-                generator.Dematerialize(0, 1);
+                if ((Items.Count() > 0) && !_estimated)
+                {
+                    var materialized = generator.Materialize(0, Items.ElementAt(0));
+                    VirtualizingPanel.Children.Insert(0, materialized.ContainerControl);
+                    materialized.ContainerControl.Measure(Size.Infinity);
+                    var desiredItemSize = materialized.ContainerControl.DesiredSize;
+                    VirtualizingAverages.AddContainerSize(VirtualizingPanel.TemplatedParent, Items.ElementAt(0), desiredItemSize);
+                    //VirtualizingPanel.Children.RemoveAt(0);
+                    //generator.Dematerialize(0, 1);
+                    //ItemsPresenter.InvalidateMeasure();
+                    _estimated = true;
+                }
             }
             else if (Items != null && VirtualizingPanel.IsAttachedToVisualTree)
             {
-                _currentState= _realizedChildren.AddChildren(Vertical);
+                _currentState = _realizedChildren.AddChildren(Vertical);
                 if (_currentState.RequiresReMeasure)
-                    _itemsPresenter.InvalidateMeasure();
+                    ItemsPresenter.InvalidateMeasure();
+
             }
+            _estimatedSize = VirtualizingAverages.GetEstimatedExtent(VirtualizingPanel.TemplatedParent, Items, Vertical);
         }
 
-        private void Scroll_ScrollChanged(object sender, ScrollChangedEventArgs e)
+        private void BoundsChanged(Rect bounds)
         {
-            _itemsPresenter.InvalidateMeasure();
+            if (_lastBounds != bounds)
+                Owner.InvalidateMeasure();
+            _lastBounds = bounds;
         }
 
+        public override string ToString()
+        {
+            return $"{Id}";
+        }
+
+        ~ItemVirtualizerLogical()
+        {
+            //            System.Console.WriteLine($"Destructing {AAA_Id}, {Items} {--_count}");
+        }
     }
+
+
 }

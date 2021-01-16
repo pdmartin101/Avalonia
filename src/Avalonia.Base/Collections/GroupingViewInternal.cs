@@ -7,16 +7,29 @@ using System.Runtime.CompilerServices;
 
 namespace Avalonia.Collections
 {
-    public class GroupingViewInternal : IEnumerable, INotifyCollectionChanged, INotifyPropertyChanged
+    public class GroupingViewInternal : IGroupingView, INotifyCollectionChanged, INotifyPropertyChanged
     {
         #region Properties
-        public object Name { get; set; }
+        public object Name { get;}
+
+        public GroupingViewInternal Items => this;
         public bool IsGrouping => _groupPaths.Count > _groupLevel;
         public Dictionary<object, GroupingViewInternal> _groupIds = new Dictionary<object, GroupingViewInternal>();
         public int Count => _items.Count;
+        public int TotalItems => TotalItemCount();
 
         #endregion
 
+        int TotalItemCount()
+        {
+            var sum = 0;
+            if (IsGrouping)
+                foreach (var item in _items)
+                    sum += ((GroupingViewInternal)item).Count;
+            else
+                sum = _items.Count;
+            return sum;
+        }
         #region Private Data
         private List<GroupDescription> _groupPaths;
         private int _groupLevel = 0;
