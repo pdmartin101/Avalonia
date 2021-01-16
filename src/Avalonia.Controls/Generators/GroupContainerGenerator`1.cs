@@ -1,8 +1,6 @@
 using System;
-using System.ComponentModel;
 using Avalonia.Collections;
 using Avalonia.Controls.Presenters;
-using Avalonia.Controls.Templates;
 using Avalonia.Data;
 
 namespace Avalonia.Controls.Generators
@@ -11,18 +9,19 @@ namespace Avalonia.Controls.Generators
     /// Creates containers for items and maintains a list of created containers.
     /// </summary>
     /// <typeparam name="T">The type of the container.</typeparam>
-    public class GroupContainerGenerator<T> : ItemContainerGenerator where T : class, IControl, new()
+    public class GroupContainerGenerator : ItemContainerGenerator
     {
-        private ItemsControl _groupParent;
+        private ItemsControl _overallOwner;
         /// <summary>
-        /// Initializes a new instance of the <see cref="ItemContainerGenerator{T}"/> class.
+        /// Initializes a new instance of the <see cref="GroupContainerGenerator"/> class.
         /// </summary>
-        /// <param name="owner">The owner control.</param>
-        public GroupContainerGenerator(IControl owner, ItemsControl groupParent)
+        /// <param name="owner">The immediate owner of the control.</param>
+        /// <param name="overallOwner">The itemscontrol that owns all the groups.</param>
+        public GroupContainerGenerator(IControl owner, ItemsControl overallOwner)
             : base(owner)
         {
             Contract.Requires<ArgumentNullException>(owner != null);
-            _groupParent = groupParent;
+            _overallOwner = overallOwner;
         }
 
         /// <inheritdoc/>
@@ -31,7 +30,7 @@ namespace Avalonia.Controls.Generators
         /// <inheritdoc/>
         protected override IControl CreateContainer(object item)
         {
-            var container = item as GroupItem<T>;
+            var container = item as GroupItem;
 
             if (container != null)
                 return container;
@@ -39,9 +38,9 @@ namespace Avalonia.Controls.Generators
             {
                 var itemsControl = Owner as ItemsControl;
                 var presenter = itemsControl.Presenter as ItemsPresenter;
-                var result = new GroupItem<T>(itemsControl);
+                var result = new GroupItem(itemsControl);
                 result.SetValue(GroupItem.TemplatedParentProperty, Owner,BindingPriority.TemplatedParent);
-                result.GroupParent = _groupParent;
+                result.GroupParent = _overallOwner;
                 result.Items = (GroupingViewInternal)item;
                 result.SetValue(GroupItem.ItemsPanelProperty, itemsControl.ItemsPanel);
                 result.ItemTemplate = itemsControl?.ItemTemplate;

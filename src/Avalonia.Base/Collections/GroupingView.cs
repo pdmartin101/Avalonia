@@ -5,8 +5,15 @@ using System.ComponentModel;
 
 namespace Avalonia.Collections
 {
+    public interface IGroupingView: IEnumerable
+    {
+        public object Name { get; }
+        public bool IsGrouping { get; }
 
-    public class GroupingView : AvaloniaObject, IEnumerable, INotifyCollectionChanged
+        public GroupingViewInternal Items { get; }
+        int TotalItems { get; }
+    }
+    public class GroupingView : AvaloniaObject, IGroupingView, INotifyCollectionChanged
     {
         public static readonly DirectProperty<GroupingView, int> TestProperty =
             AvaloniaProperty.RegisterDirect<GroupingView, int>(nameof(Test), o => o.Test, (o, v) => o.Test = v);
@@ -15,9 +22,10 @@ namespace Avalonia.Collections
 
         public static Dictionary<string, GroupingView> GroupingViews = new Dictionary<string, GroupingView>();
         #region Properties
-        public bool IsGrouping => Items.IsGrouping;
-        public GroupingViewInternal Items { get; private set; }
+        //        public bool IsGrouping => Items.IsGrouping;
         public string Id { get => _id; set => SetId(value); }
+
+        public GroupingViewInternal Items => _items;
 
         private void SetId(string value)
         {
@@ -41,6 +49,10 @@ namespace Avalonia.Collections
             set { SetTest(value); }
         }
 
+        object IGroupingView.Name => Items.Name;
+        bool IGroupingView.IsGrouping => Items.IsGrouping;
+        int IGroupingView.TotalItems => Items.TotalItems;
+
         #endregion
 
         #region Events
@@ -58,6 +70,7 @@ namespace Avalonia.Collections
         #endregion
 
         #region Private Data
+        private GroupingViewInternal _items;
         private List<GroupDescription> _groupDescriptions;
         private AvaloniaList<object> _source = new AvaloniaList<object>();
         private int _test = 77;
@@ -81,7 +94,7 @@ namespace Avalonia.Collections
         public GroupingView()
         {
             _groupDescriptions = new List<GroupDescription>();
-            Items = new GroupingViewInternal(_groupDescriptions, "Root", 0);
+            _items = new GroupingViewInternal(_groupDescriptions, "Root", 0);
         }
 
         #endregion
@@ -110,10 +123,10 @@ namespace Avalonia.Collections
         #endregion
 
         #region IAvaloniaList<object> Enumerators
-        public IEnumerator<object> GetEnumerator()
-        {
-            return ((IEnumerable<object>)Items).GetEnumerator();
-        }
+        //public IEnumerator<object> GetEnumerator()
+        //{
+        //    return ((IEnumerable<object>)Items).GetEnumerator();
+        //}
 
         IEnumerator IEnumerable.GetEnumerator()
         {

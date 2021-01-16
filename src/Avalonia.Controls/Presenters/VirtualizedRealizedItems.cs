@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using Avalonia.Controls.Generators;
 using Avalonia.Controls.Utils;

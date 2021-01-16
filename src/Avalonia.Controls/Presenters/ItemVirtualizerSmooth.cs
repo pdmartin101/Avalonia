@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Specialized;
+using System.Reactive.Linq;
 using Avalonia.Collections;
 using Avalonia.Controls.Utils;
 using Avalonia.Styling;
@@ -16,7 +17,7 @@ namespace Avalonia.Controls.Presenters
     {
         private VirtualizedRealizedItems _realizedChildren;
         private RealizedChildrenInfo _currentState = new RealizedChildrenInfo();
-        private IControl _itemsPresenter;
+        private IControl ItemsPresenter;
         //        private ScrollViewer _scrollViewer;
         public int Id;
         private bool _estimated;
@@ -24,24 +25,20 @@ namespace Avalonia.Controls.Presenters
         public static int _idCount = 300;
         public static int _count = 0;
         Rect _lastBounds;
+        private static int _measureCount;
+        private static int _overrideCount;
+        Rect _lastBounds2;
         public ItemVirtualizerSmooth(ItemsPresenter owner)
             : base(owner)
         {
             var scrollViewer = VirtualizingPanel.FindAncestorOfType<ScrollViewer>();
 //            scrollViewer.ScrollChanged += Scroll_ScrollChanged;
-            _itemsPresenter = VirtualizingPanel.Parent;
+            ItemsPresenter = VirtualizingPanel.Parent;
             Id = _idCount++;
             _realizedChildren = new VirtualizedRealizedItems(VirtualizingPanel, scrollViewer, Items, Owner.ItemContainerGenerator, Id);
-            owner.GetObservable(ItemsPresenter.TransformedBoundsProperty)
-                .Subscribe(x => BoundsChanged(Owner.Bounds));
- //           System.Console.WriteLine($"Constructing {AAA_Id}, {Items} {++_count}");
-        }
-
-        protected override IEnumerable GetItems()
-        {
-            if ((Owner.Items is GroupingView gvl) && (gvl.IsGrouping))   // Will work without but easier to debug with
-                return gvl.Items;
-            return base.GetItems();
+            owner.GetObservable(Panel.BoundsProperty)
+                .Subscribe(x => BoundsChanged(x));
+            //           System.Console.WriteLine($"Constructing {AAA_Id}, {Items} {++_count}");
         }
 
         /// <inheritdoc/>
@@ -78,8 +75,10 @@ namespace Avalonia.Controls.Presenters
          /// <inheritdoc/>
         public override Size MeasureOverride(Size availableSize)
         {
-             UpdateControls();
+//            System.Console.WriteLine($"Measure {Id}  {availableSize}  {++_measureCount}");
+            UpdateControls();
             _realizedChildren.RemoveChildren(Vertical);
+//            System.Console.WriteLine($"Measured {Id}  {_estimatedSize}  {_measureCount}");
             if (VirtualizingPanel.ScrollDirection == Layout.Orientation.Vertical)
                 return _estimatedSize;
             return _estimatedSize;
@@ -87,6 +86,7 @@ namespace Avalonia.Controls.Presenters
 
         public override Size ArrangeOverride(Size finalSize)
         {
+//            System.Console.WriteLine($"Override {Id}  {finalSize}  {++_overrideCount}");
             foreach (var container in _realizedChildren)
             {
                 var startOffset = VirtualizingAverages.GetOffsetForIndex(VirtualizingPanel.TemplatedParent, container.Index, Items, Vertical);
@@ -111,7 +111,7 @@ namespace Avalonia.Controls.Presenters
         {
             base.ItemsChanged(items, e);
             ItemContainerSync.ItemsChanged(Owner, items, e);
-            _itemsPresenter.InvalidateMeasure();
+            ItemsPresenter.InvalidateMeasure();
         }
 
         /// <summary>
@@ -130,7 +130,7 @@ namespace Avalonia.Controls.Presenters
         private void CreateAndRemoveContainers()
         {
             var generator = Owner.ItemContainerGenerator;
-            if (_itemsPresenter.Bounds.Size.IsDefault)
+            if (ItemsPresenter.Bounds.Size.IsDefault)
             {
                 if ((Items.Count() > 0) && !_estimated)
                 {
@@ -141,7 +141,7 @@ namespace Avalonia.Controls.Presenters
                     VirtualizingAverages.AddContainerSize(VirtualizingPanel.TemplatedParent, Items.ElementAt(0), desiredItemSize);
                     //VirtualizingPanel.Children.RemoveAt(0);
                     //generator.Dematerialize(0, 1);
-                    //_itemsPresenter.InvalidateMeasure();
+                    //ItemsPresenter.InvalidateMeasure();
                     _estimated = true;
                 }
             }
@@ -149,7 +149,7 @@ namespace Avalonia.Controls.Presenters
             {
                 _currentState = _realizedChildren.AddChildren(Vertical);
                 if (_currentState.RequiresReMeasure)
-                    _itemsPresenter.InvalidateMeasure();
+                    ItemsPresenter.InvalidateMeasure();
 
             }
             _estimatedSize = VirtualizingAverages.GetEstimatedExtent(VirtualizingPanel.TemplatedParent, Items, Vertical);

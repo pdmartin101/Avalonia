@@ -83,11 +83,10 @@ namespace Avalonia.Controls
             {
                 if (_itemContainerGenerator == null)
                 {
-                    _itemContainerGenerator = CreateTopItemContainerGenerator();
+                    _itemContainerGenerator = CreateBranchItemContainerGenerator();
 
-                    if (_itemContainerGenerator != null)
+                    if ((_itemContainerGenerator != null) && (!(_itemContainerGenerator is GroupContainerGenerator)))
                     {
-                        SetItemContainerGenerator(_itemContainerGenerator);
                     }
                 }
 
@@ -95,25 +94,6 @@ namespace Avalonia.Controls
             }
         }
 
-        protected virtual IItemContainerGenerator CreateTopItemContainerGenerator()
-        {
-            var generator = CreateItemContainerGenerator();
-            SetItemContainerGenerator(generator);
-            return generator;
-        }
-        //public virtual IItemContainerGenerator CreateLeafItemContainerGenerator()
-        //{
-        //    var generator = CreateItemContainerGenerator();
-        //    SetItemContainerGenerator(generator);
-        //    return generator;
-        //}
-        public virtual void SetItemContainerGenerator(IItemContainerGenerator generator)
-        {
-            generator.ItemTemplate = ItemTemplate;
-            generator.Materialized += (_, e) => OnContainersMaterialized(e);
-            generator.Dematerialized += (_, e) => OnContainersDematerialized(e);
-            generator.Recycled += (_, e) => OnContainersRecycled(e);
-        }
         /// <summary>
         /// Gets or sets the items to display.
         /// </summary>
@@ -248,6 +228,19 @@ namespace Avalonia.Controls
         protected virtual IItemContainerGenerator CreateItemContainerGenerator()
         {
             return new ItemContainerGenerator(this);
+        }
+        protected virtual IItemContainerGenerator CreateBranchItemContainerGenerator()
+        {
+            return CreateLeafItemContainerGenerator();
+        }
+        public IItemContainerGenerator CreateLeafItemContainerGenerator()
+        {
+            var gen= CreateItemContainerGenerator();
+            gen.ItemTemplate = ItemTemplate;
+            gen.Materialized += (_, e) => OnContainersMaterialized(e);
+            gen.Dematerialized += (_, e) => OnContainersDematerialized(e);
+            gen.Recycled += (_, e) => OnContainersRecycled(e);
+            return gen;
         }
 
         /// <summary>
