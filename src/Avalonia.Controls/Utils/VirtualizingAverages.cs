@@ -85,7 +85,22 @@ namespace Avalonia.Controls.Utils
             var templatedParent = GetTopTemplatedParent(control);
             if (!_controls.TryGetValue(templatedParent, out var sizes))
                 return 0;
-            return sizes.GetStartIndex(offset,items, vert);
+            return sizes.GetStartIndex(offset, items, vert);
+        }
+        public static int GetEndIndex(ITemplatedControl control, double startIndx, Size size, IEnumerable items, bool vert)
+        {
+            var templatedParent = GetTopTemplatedParent(control);
+            if (!_controls.TryGetValue(templatedParent, out var sizes))
+                return 0;
+            var offset = 0.0;
+            var indx = (int)startIndx+1;
+            var startOffset= sizes.GetOffsetForIndex((int)startIndx, items, vert);
+            while ((offset < (vert?size.Height:size.Width)) && (indx < items.Count()))
+            {
+                offset= sizes.GetOffsetForIndex(indx, items, vert)-startOffset;
+                indx++;
+            }
+            return indx;
         }
         public static double GetOffsetForIndex(ITemplatedControl control, int indx, IEnumerable items, bool vert)
         {

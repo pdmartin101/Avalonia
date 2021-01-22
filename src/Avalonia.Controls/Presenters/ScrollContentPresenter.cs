@@ -69,6 +69,7 @@ namespace Avalonia.Controls.Presenters
         private Size _extent;
         private Vector _offset;
         private IDisposable? _logicalScrollSubscription;
+        private IDisposable? _scrollSubscription;
         private Size _viewport;
         private Dictionary<int, Vector>? _activeLogicalGestureScrolls;
         private List<IControl>? _anchorCandidates;
@@ -129,7 +130,7 @@ namespace Avalonia.Controls.Presenters
         public Vector Offset
         {
             get { return _offset; }
-            set { SetAndRaise(OffsetProperty, ref _offset, ScrollViewer.CoerceOffset(Extent, Viewport, value)); }
+            set { SetAndRaise(OffsetProperty, ref _offset, ScrollViewer.CoerceOffset(Extent, Viewport, value,true)); }
         }
 
         /// <summary>
@@ -298,7 +299,10 @@ namespace Avalonia.Controls.Presenters
                 EnsureAnchorElementSelection();
 
                 // Do the arrange.
-                ArrangeOverrideImpl(size, -Offset);
+                //               ArrangeOverrideImpl(size, -Offset * size.Height / Extent.Height);
+                var scale = (size / Extent);
+                var off = new Vector(scale.X*-Offset.X, scale.Y*-Offset.Y);
+                ArrangeOverrideImpl(size, off);
 
                 // If the anchor moved during the arrange, we need to adjust the offset and do another arrange.
                 var anchorShift = TrackAnchor();
@@ -346,7 +350,8 @@ namespace Avalonia.Controls.Presenters
             }
             else
             Viewport = finalSize;
-            Extent = Child.Bounds.Size.Inflate(Child.Margin);
+            Extent = (Child is IScrollable scrollable) ? scrollable.Extent.Inflate(Child.Margin) : Child.Bounds.Size.Inflate(Child.Margin);
+//            Extent = Child.Bounds.Size.Inflate(Child.Margin);
             _isAnchorElementDirty = true;
 
             return finalSize;
@@ -429,7 +434,7 @@ namespace Avalonia.Controls.Presenters
 
                 if (Extent.Height > Viewport.Height)
                 {
-                    double height = isLogical ? scrollable!.ScrollSize.Height : 50;
+                    double height = scrollable!.ScrollSize.Height;
                     y += -e.Delta.Y * height;
                     y = Math.Max(y, 0);
                     y = Math.Min(y, Extent.Height - Viewport.Height);
@@ -479,6 +484,8 @@ namespace Avalonia.Controls.Presenters
 
             _logicalScrollSubscription?.Dispose();
             _logicalScrollSubscription = null;
+            _scrollSubscription?.Dispose();
+            _scrollSubscription = null;
 
             if (scrollable != null)
             {
@@ -495,6 +502,13 @@ namespace Avalonia.Controls.Presenters
                             .Skip(1).Subscribe(x => scrollable.Offset = x),
                         Disposable.Create(() => scrollable.ScrollInvalidated -= ScrollInvalidated));
                     UpdateFromScrollable(scrollable);
+                }
+                else
+                {
+                    _scrollSubscription = new CompositeDisposable(
+                        this.GetObservable(OffsetProperty)
+                            .Skip(1).Subscribe(x => scrollable.Offset = x),
+                        Disposable.Create(() => scrollable.ScrollInvalidated -= ScrollInvalidated));
                 }
             }
         }
@@ -514,14 +528,12 @@ namespace Avalonia.Controls.Presenters
                 Offset = default(Vector);
                 InvalidateMeasure();
             }
-            else if (scrollable.IsLogicalScrollEnabled)
+//            else if (scrollable.IsLogicalScrollEnabled)
             {
                 Viewport = scrollable.Viewport;
                 Extent = scrollable.Extent;
                 Offset = scrollable.Offset;
             }
-            if ((Child is ItemsPresenter p) && (p.VirtualizationMode == ItemVirtualizationMode.Logical))
-                Offset = scrollable.Offset;
         }
 
         private void EnsureAnchorElementSelection()

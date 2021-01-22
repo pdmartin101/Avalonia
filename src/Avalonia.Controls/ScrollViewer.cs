@@ -259,7 +259,7 @@ namespace Avalonia.Controls
 
             set
             {
-                if (SetAndRaise(OffsetProperty, ref _offset, CoerceOffset(Extent, Viewport, value)))
+                if (SetAndRaise(OffsetProperty, ref _offset, CoerceOffset(Extent, Viewport, value,false)))
                 {
                     CalculatedPropertiesChanged();
                 }
@@ -564,11 +564,14 @@ namespace Avalonia.Controls
             return false;
         }
 
-        internal static Vector CoerceOffset(Size extent, Size viewport, Vector offset)
+        internal static Vector CoerceOffset(Size extent, Size viewport, Vector offset, bool round)
         {
             var maxX = Math.Max(extent.Width - viewport.Width, 0);
             var maxY = Math.Max(extent.Height - viewport.Height, 0);
-            return new Vector(Clamp(offset.X, 0, maxX), Clamp(offset.Y, 0, maxY));
+            var y = offset.Y;
+            if (round)
+                y = Math.Round(offset.Y);
+            return new Vector(Clamp(offset.X, 0, maxX), Clamp(y, 0, maxY));
         }
 
         private static double Clamp(double value, double min, double max)
@@ -639,10 +642,10 @@ namespace Avalonia.Controls
             RaisePropertyChanged(VerticalScrollBarValueProperty, 0, VerticalScrollBarValue);
             RaisePropertyChanged(VerticalScrollBarViewportSizeProperty, 0, VerticalScrollBarViewportSize);
 
-            if (_logicalScrollable?.IsLogicalScrollEnabled == true)
+            if (_logicalScrollable != null)
             {
                 SetAndRaise(SmallChangeProperty, ref _smallChange, _logicalScrollable.ScrollSize);
-                SetAndRaise(LargeChangeProperty, ref _largeChange, _logicalScrollable.PageScrollSize);
+                SetAndRaise(LargeChangeProperty, ref _largeChange, Viewport);
             }
             else
             {

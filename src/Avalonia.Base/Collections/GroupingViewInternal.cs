@@ -295,7 +295,7 @@ namespace Avalonia.Collections
         }
         private void NotifyAdd(object item, int index)
         {
-            System.Console.WriteLine($"NotifyAdd  {++_notifyCount}");
+//            System.Console.WriteLine($"NotifyAdd  {++_notifyCount}");
             if (_collectionChanged != null)
             {
                 var e = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, new[] { item }, index);
@@ -305,7 +305,7 @@ namespace Avalonia.Collections
         }
         private void NotifyAddRange(IList items, int index)
         {
-            System.Console.WriteLine($"NotifyAddRange  {++_notifyCount}");
+//            System.Console.WriteLine($"NotifyAddRange  {++_notifyCount}");
             if (_collectionChanged != null)
             {
                 var e = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, items, index);
@@ -320,7 +320,7 @@ namespace Avalonia.Collections
              => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         public override string ToString()
         {
-            return $"{Name}";
+            return $"{Name}:{Items.Count}";
         }
 
     }

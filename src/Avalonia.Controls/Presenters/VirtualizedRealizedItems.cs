@@ -1,29 +1,36 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Avalonia.Controls.Generators;
 using Avalonia.Controls.Utils;
+using Avalonia.Styling;
+using Avalonia.VisualTree;
 
 namespace Avalonia.Controls.Presenters
 {
     internal class VirtualizedRealizedItems : IEnumerable<ItemContainerInfo>
     {
-        private readonly IVirtualizingPanel _panel;
+        private readonly IPanel _panel;
         private readonly ScrollViewer _scrollViewer;
         private readonly IEnumerable _items;
         private readonly IItemContainerGenerator _generator;
-        private bool _measureRequired;
+        private readonly ItemsPresenter _owner;
+        private readonly bool _isItemScroll;
         private int _id;
         public static int _count;
 
+
         public int Count => _generator.Containers.Count();
 
-        public VirtualizedRealizedItems(IVirtualizingPanel panel,ScrollViewer scrollViewer, IEnumerable items, IItemContainerGenerator generator,int id)
+        public VirtualizedRealizedItems(ItemsPresenter owner, int id)
         {
-            _panel = panel;
-            _items = items;
-            _generator = generator;
-            _scrollViewer = scrollViewer;
-            _id=id;
+            _owner = owner;
+            _panel = owner.Panel;
+            _items = owner.Items;
+            _generator = owner.ItemContainerGenerator;
+            _scrollViewer = owner.FindAncestorOfType<ScrollViewer>();
+            _isItemScroll = owner.VirtualizationMode == ItemVirtualizationMode.Logical;
+            _id = id;
         }
 
         public IEnumerator<ItemContainerInfo> GetEnumerator()
@@ -31,70 +38,67 @@ namespace Avalonia.Controls.Presenters
             return _generator.Containers.GetEnumerator();
         }
 
-        public RealizedChildrenInfo AddChildren(bool vert)
+        public void AddChildren(RealizedChildrenInfo info)
         {
-            _measureRequired = false;
             var numItems = _items.Count();
-            var rel = -_panel.TranslatePoint(new Point(0, 0), _scrollViewer);
-            var rel2 = _scrollViewer.Offset;
-            var panelOffset = vert ? rel.Value.Y: rel.Value.X;
-            var hiOffset = panelOffset + (vert?_scrollViewer.Bounds.Height: _scrollViewer.Bounds.Width);
-            var first = VirtualizingAverages.GetStartIndex(_panel.TemplatedParent, panelOffset, _items,vert);
- //           first = (int)rel2.Y;
-            var indx = first;
-            var offset = VirtualizingAverages.GetOffsetForIndex(_panel.TemplatedParent, indx, _items,vert);
-            var extra = offset - panelOffset;
-//            System.Console.WriteLine($"AddChildren {_id} {rel} {first} {offset} {_scrollViewer.Bounds.Height}");
-            while ((offset < hiOffset) && (indx < numItems))
-                offset += AddOneChild(indx++);
-            return new RealizedChildrenInfo { FirstInView = first, LastInView = indx - 1, LastInFullView = offset <= hiOffset ? indx - 1 : indx - 2, RequiresReMeasure=_measureRequired, Margin=4};
+            info.SetPanelRelative(-_panel.TranslatePoint(new Point(0, 0), _scrollViewer).Value, _scrollViewer.Bounds.Size);
+            if (_isItemScroll)
+                info.SetFirst(_scrollViewer.Offset);
+            else
+                info.SetFirst(_panel.TemplatedParent, _items);
+            var count = 0;
+            while (info.Realize(numItems))
+            {
+                info.AddOffset(AddOneChild(info));
+                count++;
+            }
+            if (_generator.Containers.Count()>100)
+            { }
+            System.Console.WriteLine($"AddChildren Realized {this} {count} Info {info}  Scroller Height {_scrollViewer.Bounds.Height}");
         }
 
-        public void RemoveChildren(bool vert)
+        public void RemoveChildren(RealizedChildrenInfo info)
         {
-            var rel = -_panel.TranslatePoint(new Point(0, 0), _scrollViewer);
-            var offset = vert ? rel.Value.Y : rel.Value.X;
-            var hiOffset = offset + (vert ? _scrollViewer.Bounds.Height : _scrollViewer.Bounds.Width);
-            var startIndx = VirtualizingAverages.GetStartIndex(_panel.TemplatedParent, offset, _items,vert);
-            var endIndx = VirtualizingAverages.GetStartIndex(_panel.TemplatedParent, hiOffset, _items,vert);
             var toRemove = new List<int>();
             foreach (var item in _generator.Containers)
             {
-                if ((item.Index < startIndx) || (item.Index > endIndx))
+                if (info.CheckForRemoval(item.Index))
                     toRemove.Add(item.Index);
             }
+            if (toRemove.Count != 0)
+                System.Console.WriteLine($"RemoveChildren Realized {this}  Info {info}  Scroller Height {_scrollViewer.Bounds.Height}");
             foreach (var toRem in toRemove)
                 foreach (var container in _generator.Dematerialize(toRem, 1))
                     _panel.Children.Remove(container.ContainerControl);
         }
-        internal double AddOneChild(int indx)
+
+        internal double AddOneChild(RealizedChildrenInfo info)
         {
-             var child = _generator.ContainerFromIndex(indx);
+            var child = _generator.ContainerFromIndex(info.Next);
             if (child == null)
             {
-                var materialized = _generator.Materialize(indx, _items.ElementAt(indx));
+                var materialized = _generator.Materialize(info.Next, _items.ElementAt(info.Next));
                 child = materialized.ContainerControl;
                 _panel.Children.Add(child);
                 child.Measure(Size.Infinity);
- //               System.Console.WriteLine($"AddOneChild {_id} {indx} {_items.ElementAt(indx)} {child.DesiredSize}");
             }
             else
             {
                 if (child is GroupItem gi)
                 {
-    //                System.Console.WriteLine($"Invalidate Presenter {gi} {gi.Items}");
                     gi.Presenter?.InvalidateMeasure();
                 }
-                //child.InvalidateMeasure();
                 child.Measure(Size.Infinity);
-//                System.Console.WriteLine($"AddOneChild2 {_id} {indx} {_items.ElementAt(indx)} {child.DesiredSize}");
             }
-            var diff = VirtualizingAverages.AddContainerSize(_panel.TemplatedParent, _items.ElementAt(indx), child.DesiredSize);
+            var diff = VirtualizingAverages.AddContainerSize(_panel.TemplatedParent, _items.ElementAt(info.Next), child.DesiredSize);
             if (diff != Size.Empty)
-                _measureRequired = true;
-            return child.DesiredSize.Height;
+                _owner.InvalidateMeasure();
+            return info.Vert? child.DesiredSize.Height:child.DesiredSize.Width;
         }
-
+        public IControl ContainerFromIndex(int indx)
+        {
+            return _generator.ContainerFromIndex(indx);
+        }
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
@@ -104,20 +108,76 @@ namespace Avalonia.Controls.Presenters
         {
             //            Logging.Virtual.LogWarning($"Finalized Realized {--_count}");
         }
+
+        public override string ToString()
+        {
+            return $"{_id}  Items:{_items}   Generator:{_generator.Containers.Count()}";
+        }
     }
 
     class RealizedChildrenInfo
     {
-        public int FirstInView { get; set; }
-        public int LastInView { get; set; }
-        public int LastInFullView { get; set; }
-        public double Margin { get; set; }
-        public bool RequiresReMeasure { get; set; }
+        public double PanelOffset { get; private set; }
+        public double HiOffset { get; private set; }
+        public int FirstInView { get; private set; }
+        public int LastInView => FirstInView + NumInView-1;
+        public int LastInFullView => FirstInView + NumInFullView-1;
+        public int NumInView { get; private set; }
+        public int NumInFullView { get; private set; }
 
-        public int NumInFullView => LastInFullView - FirstInView+1;
-        public void SetFirst(double first)
+        private double _currentOffset;
+        public bool Vert { get;}
+        public int Next => FirstInView + NumInView;
+
+        public RealizedChildrenInfo(bool vert)
         {
-            FirstInView = (int)first;
+            Vert = vert;
+        }
+        public void SetFirst(Vector first)
+        {
+            FirstInView = (int)(Vert ? first.Y : first.X);
+            NumInView = 0;
+            NumInFullView = 0;
+        }
+
+        internal void AddOffset(double offset)
+        {
+            _currentOffset += offset;
+            if (_currentOffset <= HiOffset)
+                NumInFullView++;
+            NumInView++;
+        }
+
+        internal void SetPanelRelative(Point relPos, Size size)
+        {
+            PanelOffset = Vert ? relPos.Y : relPos.X;
+            _currentOffset = PanelOffset;
+            HiOffset = PanelOffset + (Vert ? size.Height : size.Width);
+        }
+
+        internal bool Realize(int numItems)
+        {
+            return _currentOffset < HiOffset && Next < numItems;
+        }
+
+        internal void SetFirst(ITemplatedControl templatedParent, IEnumerable items)
+        {
+            FirstInView = VirtualizingAverages.GetStartIndex(templatedParent, PanelOffset, items, Vert);
+            _currentOffset = VirtualizingAverages.GetOffsetForIndex(templatedParent, FirstInView, items, Vert);
+            NumInView = 0;
+            NumInFullView = 0;
+        }
+
+        internal bool CheckForRemoval(int indx)
+        {
+            if ((indx < FirstInView) || (indx > LastInView))
+                return true;
+            return false;
+        }
+
+        public override string ToString()
+        {
+            return $"{PanelOffset}:{HiOffset}  {FirstInView}:{LastInView}";
         }
     }
 }

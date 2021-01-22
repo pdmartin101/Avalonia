@@ -180,6 +180,12 @@ namespace Avalonia.Collections
         }
         #endregion
 
+        public override string ToString()
+        {
+            return $"Root:{Items.Count}";
+        }
+
+
     }
 
     public class GroupDescription

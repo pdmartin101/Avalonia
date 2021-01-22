@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Specialized;
 using System.Reactive.Linq;
-using Avalonia.Collections;
 using Avalonia.Controls.Utils;
-using Avalonia.Styling;
 using Avalonia.VisualTree;
 
 namespace Avalonia.Controls.Presenters
@@ -16,76 +13,48 @@ namespace Avalonia.Controls.Presenters
     internal class ItemVirtualizerLogical : ItemVirtualizer
     {
         private VirtualizedRealizedItems _realizedChildren;
-        private RealizedChildrenInfo _currentState = new RealizedChildrenInfo();
-        private IControl ItemsPresenter;
-        //        private ScrollViewer _scrollViewer;
+        private RealizedChildrenInfo _currentState;
         public int Id;
         private bool _estimated;
         private Size _estimatedSize;
+        private double _viewport;
         public static int _idCount = 400;
         public static int _count = 0;
-        Rect _lastBounds;
         private static int _measureCount;
         private static int _overrideCount;
-        Rect _lastBounds2;
         public ItemVirtualizerLogical(ItemsPresenter owner)
             : base(owner)
         {
+            _currentState = new RealizedChildrenInfo(Vertical);
             var scrollViewer = VirtualizingPanel.FindAncestorOfType<ScrollViewer>();
-            //            scrollViewer.ScrollChanged += Scroll_ScrollChanged;
-            ItemsPresenter = VirtualizingPanel.Parent;
             Id = _idCount++;
-            _realizedChildren = new VirtualizedRealizedItems(VirtualizingPanel, scrollViewer, Items, Owner.ItemContainerGenerator, Id);
-            owner.GetObservable(Panel.BoundsProperty)
-                .Subscribe(x => BoundsChanged(x));
-            //           System.Console.WriteLine($"Constructing {AAA_Id}, {Items} {++_count}");
+            _realizedChildren = new VirtualizedRealizedItems(Owner, Id);
+            System.Console.WriteLine($"Constructing {Id}, {Items} {++_count}");
         }
 
         /// <inheritdoc/>
-        public override bool IsLogicalScrollEnabled => true;
-
-        /// <summary>
-        /// This property should never be accessed because <see cref="IsLogicalScrollEnabled"/> is
-        /// false.
-        /// </summary>
         public override double ExtentValue
         {
-            get=>Vertical?_estimatedSize.Height:_estimatedSize.Width;
+            get=>ItemCount;
         }
 
-        /// <summary>
-        /// This property should never be accessed because <see cref="IsLogicalScrollEnabled"/> is
-        /// false.
-        /// </summary>
-        public override double OffsetValue
-        {
-            get { throw new NotSupportedException(); }
-            set { throw new NotSupportedException(); }
-        }
-
-        /// <summary>
-        /// This property should never be accessed because <see cref="IsLogicalScrollEnabled"/> is
-        /// false.
-        /// </summary>
+        /// <inheritdoc/>
         public override double ViewportValue
         {
-            get { return 999; }
+            get { return _viewport; }
         }
 
-        //protected override Size GetScrollSize()
-        //{
-        //    var totalItems = (Items is IGroupingView igv) ? igv.TotalItems : _itemCount;
-        //    if (Vertical)
-        //        return new Size(50, _estimatedSize.Height / totalItems);
-        //    return new Size(_estimatedSize.Width / totalItems, 50);
-        //}
+        /// <inheritdoc/>
+        public override double ScrollValue => 1;
+
         /// <inheritdoc/>
         public override Size MeasureOverride(Size availableSize)
         {
-            System.Console.WriteLine($"Measure {Id}  {availableSize}  {++_measureCount}");
+            System.Console.WriteLine($"Measure Realized {_realizedChildren} Info {_currentState} {availableSize}  {++_measureCount}");
             UpdateControls();
-            _realizedChildren.RemoveChildren(Vertical);
-            System.Console.WriteLine($"Measured {Id}  {_estimatedSize}  {_measureCount}");
+            if (!Owner.Bounds.Size.IsDefault)
+                _realizedChildren.RemoveChildren(_currentState);
+            System.Console.WriteLine($"Measured Realized {_realizedChildren} Info {_currentState} {_estimatedSize}  {_measureCount}");
             if (VirtualizingPanel.ScrollDirection == Layout.Orientation.Vertical)
                 return _estimatedSize;
             return _estimatedSize;
@@ -93,14 +62,21 @@ namespace Avalonia.Controls.Presenters
 
         public override Size ArrangeOverride(Size finalSize)
         {
-            System.Console.WriteLine($"Override {Id}  {finalSize}  {++_overrideCount}");
-            foreach (var container in _realizedChildren)
+//            System.Console.WriteLine($"Override {Id}  {finalSize}  {_realizedChildren.Count}  {++_overrideCount}");
+            var startOffset = _currentState.PanelOffset < 0?0: _currentState.PanelOffset;
+            for (int i = _currentState.FirstInView; i < _currentState.LastInView+1; i++)
             {
-                var startOffset = VirtualizingAverages.GetOffsetForIndex(VirtualizingPanel.TemplatedParent, container.Index, Items, Vertical);
+                var control=_realizedChildren.ContainerFromIndex(i);
                 if (Vertical)
-                    container.ContainerControl.Arrange(new Rect(new Point(0, startOffset), new Size(finalSize.Width, container.ContainerControl.DesiredSize.Height)));
+                {
+                    control.Arrange(new Rect(new Point(0, startOffset), new Size(finalSize.Width, control.DesiredSize.Height)));
+                    startOffset += control.DesiredSize.Height;
+                }
                 else
-                    container.ContainerControl.Arrange(new Rect(new Point(startOffset, 0), new Size(container.ContainerControl.DesiredSize.Width, finalSize.Height)));
+                {
+                    control.Arrange(new Rect(new Point(startOffset,0), new Size(control.DesiredSize.Width, finalSize.Height)));
+                    startOffset += control.DesiredSize.Width;
+                }
             }
             Owner.Panel.Arrange(new Rect(finalSize));
             return finalSize;
@@ -110,15 +86,17 @@ namespace Avalonia.Controls.Presenters
         public override void UpdateControls()
         {
             CreateAndRemoveContainers();
-            //InvalidateScroll();
         }
 
         /// <inheritdoc/>
         public override void ItemsChanged(IEnumerable items, NotifyCollectionChangedEventArgs e)
         {
+            System.Console.WriteLine($"ItemsChanged {Id} Current Items {Items}   New Items {items} ");
             base.ItemsChanged(items, e);
-            ItemContainerSync.ItemsChanged(Owner, items, e);
-            ItemsPresenter.InvalidateMeasure();
+            if (e.Action != NotifyCollectionChangedAction.Add)
+                ItemContainerSync.ItemsChanged(Owner, null, e);
+            else
+                Owner.InvalidateMeasure();
         }
 
         /// <summary>
@@ -137,7 +115,7 @@ namespace Avalonia.Controls.Presenters
         private void CreateAndRemoveContainers()
         {
             var generator = Owner.ItemContainerGenerator;
-            if (ItemsPresenter.Bounds.Size.IsDefault)
+            if (Owner.Bounds.Size.IsDefault)
             {
                 if ((Items.Count() > 0) && !_estimated)
                 {
@@ -150,23 +128,19 @@ namespace Avalonia.Controls.Presenters
                     //generator.Dematerialize(0, 1);
                     //ItemsPresenter.InvalidateMeasure();
                     _estimated = true;
+                    System.Console.WriteLine($"Estimate {Id} Items:{Items} ");
                 }
             }
             else if (Items != null && VirtualizingPanel.IsAttachedToVisualTree)
             {
-                _currentState = _realizedChildren.AddChildren(Vertical);
-                if (_currentState.RequiresReMeasure)
-                    ItemsPresenter.InvalidateMeasure();
-
+                _realizedChildren.AddChildren(_currentState);
+                if (_viewport != _currentState.NumInFullView)
+                {
+                    _viewport = _currentState.NumInFullView;
+                    InvalidateScroll();
+                }
             }
             _estimatedSize = VirtualizingAverages.GetEstimatedExtent(VirtualizingPanel.TemplatedParent, Items, Vertical);
-        }
-
-        private void BoundsChanged(Rect bounds)
-        {
-            if (_lastBounds != bounds)
-                Owner.InvalidateMeasure();
-            _lastBounds = bounds;
         }
 
         public override string ToString()
@@ -176,7 +150,7 @@ namespace Avalonia.Controls.Presenters
 
         ~ItemVirtualizerLogical()
         {
-            //            System.Console.WriteLine($"Destructing {AAA_Id}, {Items} {--_count}");
+            System.Console.WriteLine($"Destructing {Id}, {Items} {--_count}");
         }
     }
 

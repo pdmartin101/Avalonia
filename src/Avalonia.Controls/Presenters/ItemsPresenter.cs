@@ -9,7 +9,7 @@ namespace Avalonia.Controls.Presenters
     /// <summary>
     /// Displays items inside an <see cref="ItemsControl"/>.
     /// </summary>
-    public class ItemsPresenter : ItemsPresenterBase, ILogicalScrollable
+    public class ItemsPresenter : ItemsPresenterBase, ILogicalScrollable, IDisposable
     {
         /// <summary>
         /// Defines the <see cref="VirtualizationMode"/> property.
@@ -91,7 +91,7 @@ namespace Avalonia.Controls.Presenters
         }
 
         /// <inheritdoc/>
-        Size IScrollable.Extent => Virtualizer?.Extent ?? Size.Empty;
+        Size IScrollable.Extent => Virtualizer?.Extent ?? Bounds.Size;
 
         /// <inheritdoc/>
         Vector IScrollable.Offset
@@ -107,7 +107,7 @@ namespace Avalonia.Controls.Presenters
         }
 
         /// <inheritdoc/>
-        Size IScrollable.Viewport => Virtualizer?.Viewport ?? Bounds.Size;
+        Size IScrollable.Viewport => Virtualizer?.Viewport ?? Parent.Bounds.Size.Deflate(Margin);
 
         /// <inheritdoc/>
         event EventHandler ILogicalScrollable.ScrollInvalidated
@@ -117,7 +117,7 @@ namespace Avalonia.Controls.Presenters
         }
 
         /// <inheritdoc/>
-        Size ILogicalScrollable.ScrollSize => new Size(ScrollViewer.DefaultSmallChange, 1);
+        Size ILogicalScrollable.ScrollSize => Virtualizer ?.ScrollSize ??new Size(ScrollViewer.DefaultSmallChange, ScrollViewer.DefaultSmallChange);
 
         /// <inheritdoc/>
         Size ILogicalScrollable.PageScrollSize => Virtualizer?.Viewport ?? new Size(16, 16);
@@ -188,6 +188,16 @@ namespace Avalonia.Controls.Presenters
             Virtualizer?.Dispose();
             Virtualizer = ItemVirtualizer.Create(this);
             _scrollInvalidated?.Invoke(this, EventArgs.Empty);
+        }
+
+        public void Dispose()
+        {
+            ((IDisposable)Virtualizer).Dispose();
+        }
+
+        ~ItemsPresenter()
+        {
+            System.Console.WriteLine($"Destructing ItemsPresenter, {Items}");
         }
     }
 }
