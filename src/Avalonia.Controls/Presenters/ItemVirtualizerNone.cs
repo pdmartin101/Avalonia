@@ -25,34 +25,7 @@ namespace Avalonia.Controls.Presenters
         /// <inheritdoc/>
         public override bool IsLogicalScrollEnabled => false;
 
-        /// <summary>
-        /// This property should never be accessed because <see cref="IsLogicalScrollEnabled"/> is
-        /// false.
-        /// </summary>
-        public override double ExtentValue
-        {
-            get { throw new NotSupportedException(); }
-        }
-
-        /// <summary>
-        /// This property should never be accessed because <see cref="IsLogicalScrollEnabled"/> is
-        /// false.
-        /// </summary>
-        public override double OffsetValue
-        {
-            get { throw new NotSupportedException(); }
-            set { throw new NotSupportedException(); }
-        }
-
-        /// <summary>
-        /// This property should never be accessed because <see cref="IsLogicalScrollEnabled"/> is
-        /// false.
-        /// </summary>
-        public override double ViewportValue
-        {
-            get { throw new NotSupportedException(); }
-        }
-
+ 
         /// <inheritdoc/>
         public override void ItemsChanged(IEnumerable items, NotifyCollectionChangedEventArgs e)
         {

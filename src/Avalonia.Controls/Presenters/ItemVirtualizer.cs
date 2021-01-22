@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Specialized;
 using System.Reactive.Linq;
+using System.Runtime.InteropServices.WindowsRuntime;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Utils;
 using Avalonia.Input;
@@ -17,6 +18,12 @@ namespace Avalonia.Controls.Presenters
     {
         private double _crossAxisOffset;
         private IDisposable _subscriptions;
+        private IDisposable _extentSub;
+        private IDisposable _viewportSub;
+        protected ScrollViewer _scrollViewer;
+        private Rect _lastExtent;
+        private Rect _lastViewport;
+        private Rect _lastVirt;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ItemVirtualizer"/> class.
@@ -27,14 +34,21 @@ namespace Avalonia.Controls.Presenters
             Owner = owner;
             Items = GetItems();
             ItemCount = Items.Count();
+            _scrollViewer = VirtualizingPanel.FindAncestorOfType<ScrollViewer>();
 
             var panel = VirtualizingPanel;
 
             if (panel != null)
             {
-                _subscriptions = panel.GetObservable(Panel.BoundsProperty)
+                //_subscriptions = panel.GetObservable(Panel.BoundsProperty)
+                //    .Skip(1)
+                //    .Subscribe(o => VirtChanged(o));
+                _extentSub = owner.GetObservable(Panel.BoundsProperty)
                     .Skip(1)
-                    .Subscribe(_ => InvalidateScroll());
+                    .Subscribe(o => ExtentChanged(o));
+                _viewportSub = _scrollViewer.GetObservable(ScrollViewer.BoundsProperty)
+                    .Skip(1)
+                    .Subscribe(o => ViewportChanged(o));
             }
         }
 
@@ -80,59 +94,50 @@ namespace Avalonia.Controls.Presenters
         /// <summary>
         /// Gets a value indicating whether logical scrolling is enabled.
         /// </summary>
-        public abstract bool IsLogicalScrollEnabled { get; }
- 
+        public virtual bool IsLogicalScrollEnabled => false;
+
         /// <summary>
         /// Gets the value of the scroll extent.
         /// </summary>
-        public abstract double ExtentValue { get; }
+        public virtual double ExtentValue => Vertical?Owner.DesiredSize.Height: Owner.DesiredSize.Width;  // PDMPDM maybe should be VirtPanel
 
         /// <summary>
-        /// Gets or sets the value of the current scroll offset.
+        /// This property should never be accessed because <see cref="IsLogicalScrollEnabled"/> is
+        /// false.
         /// </summary>
-        public abstract double OffsetValue { get; set; }
+        public virtual double OffsetValue { get; set; }
 
         /// <summary>
         /// Gets the value of the scrollable viewport.
         /// </summary>
-        public abstract double ViewportValue { get; }
+        public virtual double ViewportValue => GetViewPort();
+
+        private double GetViewPort()
+        {
+            if (_scrollViewer != null)
+                return Vertical ?_scrollViewer.Viewport.Height:_scrollViewer.Viewport.Width;
+            return Vertical ? Owner.Bounds.Height:Owner.Bounds.Width;
+        }
+
+        /// <summary>
+        /// Gets the value of the small scroll step.
+        /// </summary>
+        public virtual double ScrollValue => ScrollViewer.DefaultSmallChange;
 
         /// <summary>
         /// Gets the <see cref="ExtentValue"/> as a <see cref="Size"/>.
         /// </summary>
-        public Size Extent
-        {
-            get
-            {
-                if (IsLogicalScrollEnabled)
-                {
-                    return Vertical ?
-                        new Size(Owner.Panel.DesiredSize.Width, ExtentValue) :
-                        new Size(ExtentValue, Owner.Panel.DesiredSize.Height);
-                }
-
-                return default;
-            }
-        }
+        public Size Extent=> Vertical ?
+                        new Size(Owner.DesiredSize.Width, ExtentValue) :
+                        new Size(ExtentValue, Owner.DesiredSize.Height);
 
         /// <summary>
         /// Gets the <see cref="ViewportValue"/> as a <see cref="Size"/>.
         /// </summary>
-        public Size Viewport
-        {
-            get
-            {
- //               if (IsLogicalScrollEnabled)
-                {
-                    return Vertical ?
+        public Size Viewport => Vertical ?
                         Owner.Bounds.Size.Inflate(Owner.Margin).WithHeight(ViewportValue) :
                         new Size(ViewportValue, Owner.Bounds.Height + Owner.Margin.Top + Owner.Margin.Bottom);
-                }
-
-                return default;
-            }
-        }
-
+ 
         /// <summary>
         /// Gets or sets the <see cref="OffsetValue"/> as a <see cref="Vector"/>.
         /// </summary>
@@ -140,23 +145,18 @@ namespace Avalonia.Controls.Presenters
         {
             get
             {
- //               if (IsLogicalScrollEnabled)
+                if (IsLogicalScrollEnabled)
                 {
-                    try
-                    {
-                         return Vertical ? new Vector(_crossAxisOffset, OffsetValue) : new Vector(OffsetValue, _crossAxisOffset);
-                    }
-                    catch (Exception e)
-                    { }
+                    return Vertical ? new Vector(_crossAxisOffset, OffsetValue) : new Vector(OffsetValue, _crossAxisOffset);
                 }
-                return default;
+                return Vertical ? new Vector(0, OffsetValue) : new Vector(OffsetValue, 0);
             }
 
             set
             {
                 if (!IsLogicalScrollEnabled)
                 {
-                    throw new NotSupportedException("Logical scrolling disabled.");
+                    OffsetValue=Vertical?value.Y:value.X;
                 }
 
                 var oldCrossAxisOffset = _crossAxisOffset;
@@ -178,7 +178,15 @@ namespace Avalonia.Controls.Presenters
                 }
             }
         }
-        
+
+        /// <summary>
+        /// Gets the <see cref="ScrollSize"/> as a <see cref="Size"/>.
+        /// </summary>
+        public Size ScrollSize => Vertical ?
+                        new Size(ScrollViewer.DefaultSmallChange, ScrollValue) :
+                        new Size(ScrollValue, 0);
+
+
         /// <summary>
         /// Creates an <see cref="ItemVirtualizer"/> based on an item presenter's 
         /// <see cref="ItemVirtualizationMode"/>.
@@ -298,8 +306,14 @@ namespace Avalonia.Controls.Presenters
         /// <inheritdoc/>
         public virtual void Dispose()
         {
+            _scrollViewer = null;
+            System.Console.WriteLine($"Dispose {Items}");
             _subscriptions?.Dispose();
             _subscriptions = null;
+            _extentSub?.Dispose();
+            _extentSub = null;
+            _viewportSub?.Dispose();
+            _viewportSub = null;
 
             if (VirtualizingPanel != null)
             {
@@ -314,5 +328,28 @@ namespace Avalonia.Controls.Presenters
         /// Invalidates the current scroll.
         /// </summary>
         protected void InvalidateScroll() => ((ILogicalScrollable)Owner).RaiseScrollInvalidated(EventArgs.Empty);
+
+        private void ExtentChanged(Rect bounds)
+        {
+//            System.Console.WriteLine($"Extent from  {_lastExtent}  to {bounds}");
+            if (_lastExtent != bounds)
+                Owner.InvalidateMeasure();
+            _lastExtent = bounds;
+        }
+        private void ViewportChanged(Rect bounds)
+        {
+//            System.Console.WriteLine($"Viewport from  {_lastViewport}  to {bounds}");
+            if (_lastViewport != bounds)
+                Owner.InvalidateMeasure();
+            _lastViewport = bounds;
+        }
+        private void VirtChanged(Rect bounds)
+        {
+            System.Console.WriteLine($"Virt from  {_lastVirt}  to {bounds}");
+            if (_lastVirt != bounds)
+                Owner.InvalidateMeasure();
+            _lastVirt = bounds;
+        }
+
     }
 }

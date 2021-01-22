@@ -108,6 +108,8 @@ namespace Avalonia.Controls.Presenters
             }
         }
 
+        public override double ScrollValue => 1;
+
         /// <inheritdoc/>
         public override Size MeasureOverride(Size availableSize)
         {

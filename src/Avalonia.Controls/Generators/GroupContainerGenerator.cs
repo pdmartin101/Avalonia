@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Avalonia.Collections;
 using Avalonia.Controls.Presenters;
 using Avalonia.Data;
@@ -8,7 +9,6 @@ namespace Avalonia.Controls.Generators
     /// <summary>
     /// Creates containers for items and maintains a list of created containers.
     /// </summary>
-    /// <typeparam name="T">The type of the container.</typeparam>
     public class GroupContainerGenerator : ItemContainerGenerator
     {
         private ItemsControl _overallOwner;
@@ -53,6 +53,31 @@ namespace Avalonia.Controls.Generators
             }
         }
 
+        public override IEnumerable<ItemContainerInfo> Dematerialize(int startingIndex, int count)
+        {
+            var demat= base.Dematerialize(startingIndex, count);
+            foreach (var item in demat)
+            {
+                if (item.ContainerControl is GroupItem gi)
+                {
+                    ((IDisposable)gi.Presenter)?.Dispose();
+                }
+            }
+            return demat;
+        }
+
+        public override IEnumerable<ItemContainerInfo> Clear()
+        {
+            var demat = base.Clear();
+            foreach (var item in demat)
+            {
+                if (item.ContainerControl is GroupItem gi)
+                {
+                    ((IDisposable)gi.Presenter)?.Dispose();
+                }
+            }
+            return demat;
+        }
         /// <inheritdoc/>
         public override bool TryRecycle(int oldIndex, int newIndex, object item)
         {

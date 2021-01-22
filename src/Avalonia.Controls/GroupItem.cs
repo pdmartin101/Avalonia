@@ -53,7 +53,11 @@ namespace Avalonia.Controls
         //    PressedMixin.Attach<GroupItem>();
         //    FocusableProperty.OverrideDefaultValue<GroupItem>(true);
         //}
+        ~GroupItem()
+        {
+            System.Console.WriteLine($"Destructing GroupItem, {Items}");
+        }
 
     }
 
- }
+}
