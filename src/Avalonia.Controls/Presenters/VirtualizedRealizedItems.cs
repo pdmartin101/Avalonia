@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Avalonia.Collections;
 using Avalonia.Controls.Generators;
 using Avalonia.Controls.Utils;
 using Avalonia.Styling;
@@ -43,7 +44,12 @@ namespace Avalonia.Controls.Presenters
             var numItems = _items.Count();
             info.SetPanelRelative(-_panel.TranslatePoint(new Point(0, 0), _scrollViewer).Value, _scrollViewer.Bounds.Size);
             if (_isItemScroll)
-                info.SetFirst(_scrollViewer.Offset);
+            {
+                int scrollVal = (int)_scrollViewer.Offset.Y;
+                if (_items is IGroupingView gv)
+                    scrollVal=gv.GetItemPosition((int)_scrollViewer.Offset.Y);
+                info.SetFirst(scrollVal);
+            }
             else
                 info.SetFirst(_panel.TemplatedParent, _items);
             var count = 0;
@@ -133,9 +139,9 @@ namespace Avalonia.Controls.Presenters
         {
             Vert = vert;
         }
-        public void SetFirst(Vector first)
+        public void SetFirst(int first)
         {
-            FirstInView = (int)(Vert ? first.Y : first.X);
+            FirstInView = first<0?0:first;
             NumInView = 0;
             NumInFullView = 0;
         }

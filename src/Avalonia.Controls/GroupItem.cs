@@ -18,6 +18,7 @@ namespace Avalonia.Controls
         public int Level { get; set; }
         public ItemVirtualizationMode VirtualizationMode { get; set; } = ItemVirtualizationMode.Smooth;
         public ItemsControl GroupParent { get; set; }
+        public IPanel VirtualizingPanel => Presenter?.Panel;
 
 
         public GroupItem(ItemsControl itemsControl)

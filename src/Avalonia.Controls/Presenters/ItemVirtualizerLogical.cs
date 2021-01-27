@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Specialized;
 using System.Reactive.Linq;
+using Avalonia.Collections;
 using Avalonia.Controls.Utils;
 using Avalonia.VisualTree;
 
@@ -35,13 +36,13 @@ namespace Avalonia.Controls.Presenters
         /// <inheritdoc/>
         public override double ExtentValue
         {
-            get=>ItemCount;
+            get => Items is IGroupingView gv ? gv.TotalItems : Items.Count();
         }
 
         /// <inheritdoc/>
         public override double ViewportValue
         {
-            get { return _viewport; }
+            get { return 11; }
         }
 
         /// <inheritdoc/>
@@ -64,9 +65,20 @@ namespace Avalonia.Controls.Presenters
         {
 //            System.Console.WriteLine($"Override {Id}  {finalSize}  {_realizedChildren.Count}  {++_overrideCount}");
             var startOffset = _currentState.PanelOffset < 0?0: _currentState.PanelOffset;
+            var panelOffset = startOffset;
             for (int i = _currentState.FirstInView; i < _currentState.LastInView+1; i++)
             {
                 var control=_realizedChildren.ContainerFromIndex(i);
+                if ((i == _currentState.FirstInView) && (control is GroupItem gi) && (gi.Items is IGroupingView gv))
+                {
+                    var vp = gi.VirtualizingPanel;
+                    var headerSize = gi.Bounds.Size - vp.Bounds.Size;
+                    var scrollVal = gv.GetItemPosition((int)_scrollViewer.Offset.Y);
+                    var perItem = vp.Bounds.Size.Height / gi.Items.Count();
+                    var itemNum = gv.GetItemPosition((int)_scrollViewer.Offset.Y);
+                    if (scrollVal >= 0)
+                        startOffset -= headerSize.Height+perItem*itemNum;
+                }
                 if (Vertical)
                 {
                     control.Arrange(new Rect(new Point(0, startOffset), new Size(finalSize.Width, control.DesiredSize.Height)));
@@ -77,6 +89,7 @@ namespace Avalonia.Controls.Presenters
                     control.Arrange(new Rect(new Point(startOffset,0), new Size(control.DesiredSize.Width, finalSize.Height)));
                     startOffset += control.DesiredSize.Width;
                 }
+                panelOffset = 0;
             }
             Owner.Panel.Arrange(new Rect(finalSize));
             return finalSize;
