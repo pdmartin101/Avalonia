@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -10,33 +11,63 @@ namespace Avalonia.Collections
     public class GroupingViewInternal : IGroupingView, INotifyCollectionChanged, INotifyPropertyChanged
     {
         #region Properties
-        public object Name { get;}
-
-        public GroupingViewInternal Items => this;
-        public bool IsGrouping => _groupPaths.Count > _groupLevel;
-        public Dictionary<object, GroupingViewInternal> _groupIds = new Dictionary<object, GroupingViewInternal>();
+        public object Name { get; private set; }
         public int Count => _items.Count;
-        public int TotalItems => TotalItemCount();
+
+        #endregion
+
+        #region Private Data
+        private Dictionary<object, GroupingViewInternal> _groupIds = new Dictionary<object, GroupingViewInternal>();
+        private List<GroupDescription> _groupPaths;
+        private int _groupLevel = 0;
+        private bool _isGrouping => _groupPaths.Count > _groupLevel;
+        private event NotifyCollectionChangedEventHandler _collectionChanged;
+        private AvaloniaList<object> _items { get; set; } = new AvaloniaList<object>();
+        private int _itemScrollStart;
+        private int _itemScrollEnd;
+        #endregion
+
+        #region IGroupingView
+
+        object IGroupingView.Name => Name;
+
+        bool IGroupingView.IsGrouping => _isGrouping;
+
+        IGroupingView IGroupingView.Items => this;
+        int IGroupingView.Count => Count;
+
+        int IGroupingView.TotalItems => TotalItemCount();
+        int IGroupingView.ItemScrollStart => _itemScrollStart;
+        int IGroupingView.ItemScrollEnd => _itemScrollEnd;
+
+        int IGroupingView.GetItemPosition(int scrollVal)
+        {
+            if (!_isGrouping)
+            {
+                if (scrollVal <=_itemScrollEnd)
+                    return scrollVal-_itemScrollStart;
+                return -1;
+            }
+            for (int i = 0; i < Count; i++)
+            {
+                if (((IGroupingView)_items[i]).ItemScrollEnd >= scrollVal)
+                    return i;
+            }
+            return Count;
+        }
 
         #endregion
 
         int TotalItemCount()
         {
             var sum = 0;
-            if (IsGrouping)
+            if (_isGrouping)
                 foreach (var item in _items)
-                    sum += ((GroupingViewInternal)item).Count;
+                    sum += ((IGroupingView)item).Count;
             else
-                sum = _items.Count;
+                sum = Count;
             return sum;
         }
-        #region Private Data
-        private List<GroupDescription> _groupPaths;
-        private int _groupLevel = 0;
-        private event NotifyCollectionChangedEventHandler _collectionChanged;
-        private AvaloniaList<object> _items { get; set; } = new AvaloniaList<object>();
-
-        #endregion
 
         #region Events
         public event NotifyCollectionChangedEventHandler CollectionChanged
@@ -65,7 +96,7 @@ namespace Avalonia.Collections
 
         internal void Add(object item)
         {
-            if (IsGrouping)
+            if (_isGrouping)
             {
                 var groupListItem = GetGroupForAdd(item, out var newlyCreated, out var indx);
                 groupListItem.Add(item);
@@ -89,7 +120,7 @@ namespace Avalonia.Collections
         private void AddRangeImpl(IEnumerable<object> items)
         {
             var indx = Count;
-            if (IsGrouping)
+            if (_isGrouping)
             {
                 Dictionary<GroupingViewInternal, List<object>> hiearchyList = new Dictionary<GroupingViewInternal, List<object>>();
                 var newlyCreatedGroups = new List<GroupingViewInternal>();
@@ -118,7 +149,7 @@ namespace Avalonia.Collections
 
         internal bool Remove(object item)
         {
-            if (IsGrouping)
+            if (_isGrouping)
             {
                 if (GetGroupForRemove(item, out var groupListItem))
                 {
@@ -141,7 +172,7 @@ namespace Avalonia.Collections
         }
         private void RemoveRangeImpl(IEnumerable<object> items)
         {
-            if (IsGrouping)
+            if (_isGrouping)
             {
                 Dictionary<GroupingViewInternal, List<object>> hiearchyList = new Dictionary<GroupingViewInternal, List<object>>();
                 var deletedGroups = new List<GroupingViewInternal>();
@@ -180,7 +211,7 @@ namespace Avalonia.Collections
 
         internal void Clear()
         {
-            if (IsGrouping)
+            if (_isGrouping)
             {
                 foreach (var group in _items)
                 {
@@ -193,7 +224,7 @@ namespace Avalonia.Collections
         }
         internal void ClearFrom(int level)
         {
-            if (IsGrouping)
+            if (_isGrouping)
             {
                 foreach (var group in _items)
                 {
@@ -224,8 +255,24 @@ namespace Avalonia.Collections
 
         #endregion
 
+        internal int SetItemScrolling(int itemScrollVal)
+        {
+            _itemScrollStart = itemScrollVal;
+            if (_isGrouping)
+            {
+                int next = _itemScrollStart;
+                foreach (GroupingViewInternal item in _items)
+                {
+                    next = item.SetItemScrolling(next+1);
+                }
+                return next;
+            }
+            _itemScrollEnd = _itemScrollStart + Count-1;
+            return _itemScrollStart + Count;
+        }
+
         #region Private Methods
-        private void RemoveGroupAndNotify(GroupingViewInternal groupListItem)
+        private void RemoveGroupAndNotify(IGroupingView groupListItem)
         {
             _groupIds.Remove(groupListItem.Name);
             RemoveAndNotify(groupListItem);
@@ -320,7 +367,7 @@ namespace Avalonia.Collections
              => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         public override string ToString()
         {
-            return $"{Name}:{Items.Count}";
+            return $"{Name}:{_items.Count} {((IGroupingView)this).IsGrouping}";
         }
 
     }

@@ -10,8 +10,12 @@ namespace Avalonia.Collections
         public object Name { get; }
         public bool IsGrouping { get; }
 
-        public GroupingViewInternal Items { get; }
+        public IGroupingView Items { get; }
+        int Count { get; }
         int TotalItems { get; }
+        int ItemScrollStart { get; }
+        int ItemScrollEnd { get; }
+        int GetItemPosition(int scrollVal);
     }
     public class GroupingView : AvaloniaObject, IGroupingView, INotifyCollectionChanged
     {
@@ -24,8 +28,6 @@ namespace Avalonia.Collections
         #region Properties
         //        public bool IsGrouping => Items.IsGrouping;
         public string Id { get => _id; set => SetId(value); }
-
-        public GroupingViewInternal Items => _items;
 
         private void SetId(string value)
         {
@@ -49,23 +51,28 @@ namespace Avalonia.Collections
             set { SetTest(value); }
         }
 
-        object IGroupingView.Name => Items.Name;
-        bool IGroupingView.IsGrouping => Items.IsGrouping;
-        int IGroupingView.TotalItems => Items.TotalItems;
+        object IGroupingView.Name => ((IGroupingView)_items).Name;
+        IGroupingView IGroupingView.Items => _items;
+        int IGroupingView.Count => _items.Count;
+
+        bool IGroupingView.IsGrouping => ((IGroupingView)_items).IsGrouping;
+        int IGroupingView.TotalItems => ((IGroupingView)_items).TotalItems;
+        int IGroupingView.ItemScrollStart => ((IGroupingView)_items).ItemScrollStart;
+        int IGroupingView.ItemScrollEnd => ((IGroupingView)_items).ItemScrollEnd;
 
         #endregion
 
         #region Events
         public event NotifyCollectionChangedEventHandler CollectionChanged
         {
-            add { ((INotifyCollectionChanged)Items).CollectionChanged += value; }
-            remove { ((INotifyCollectionChanged)Items).CollectionChanged -= value; }
+            add { ((INotifyCollectionChanged)_items).CollectionChanged += value; }
+            remove { ((INotifyCollectionChanged)_items).CollectionChanged -= value; }
         }
 
         public event PropertyChangedEventHandler PropertyChanged
         {
-            add { ((INotifyPropertyChanged)Items).PropertyChanged += value; }
-            remove { ((INotifyPropertyChanged)Items).PropertyChanged -= value; }
+            add { ((INotifyPropertyChanged)_items).PropertyChanged += value; }
+            remove { ((INotifyPropertyChanged)_items).PropertyChanged -= value; }
         }
         #endregion
 
@@ -95,6 +102,7 @@ namespace Avalonia.Collections
         {
             _groupDescriptions = new List<GroupDescription>();
             _items = new GroupingViewInternal(_groupDescriptions, "Root", 0);
+            _items.SetItemScrolling(0);
         }
 
         #endregion
@@ -102,9 +110,9 @@ namespace Avalonia.Collections
         #region Public Methods
         public void AddGroup(GroupDescription groupPath)
         {
-            Items.ClearFrom(_groupDescriptions.Count - 1);   // -1 due to ItemsGenerator changing to GroupGenerator in the ItemsPresenter
+            _items.ClearFrom(_groupDescriptions.Count - 1);   // -1 due to ItemsGenerator changing to GroupGenerator in the ItemsPresenter
             _groupDescriptions.Add(groupPath);
-            Items.AddRange(Source);
+            _items.AddRange(Source);
         }
 
         public void RemoveGroup(int indx)
@@ -114,10 +122,14 @@ namespace Avalonia.Collections
                 var clearFrom = indx;
                 if (clearFrom == (_groupDescriptions.Count - 1))
                     clearFrom--;  // -1 due to GroupGenerator changing to ItemsGenerator in the ItemsPresenter
-                Items.ClearFrom(clearFrom);
+                _items.ClearFrom(clearFrom);
                 _groupDescriptions.RemoveAt(indx);
-                Items.AddRange(Source);
+                _items.AddRange(Source);
             }
+        }
+        public int GetItemPosition(int scrollVal)
+        {
+            return ((IGroupingView)_items).GetItemPosition(scrollVal);
         }
 
         #endregion
@@ -130,7 +142,7 @@ namespace Avalonia.Collections
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return ((IEnumerable)Items).GetEnumerator();
+            return ((IEnumerable)_items).GetEnumerator();
         }
         #endregion
 
@@ -146,7 +158,8 @@ namespace Avalonia.Collections
             if (value != null)
             {
                 _source.CollectionChanged += FlatCollectioChanged;
-                Items.AddRange(value);
+                _items.AddRange(value);
+                _items.SetItemScrolling(0);
             }
         }
         private void SetGroupDescriptions(List<GroupDescription> value)
@@ -162,17 +175,17 @@ namespace Avalonia.Collections
             switch (e.Action)
             {
                 case NotifyCollectionChangedAction.Add:
-                    Items.AddRange(e.NewItems);
+                    _items.AddRange(e.NewItems);
                     break;
                 case NotifyCollectionChangedAction.Move:
                     break;
                 case NotifyCollectionChangedAction.Remove:
-                    Items.RemoveRange(e.OldItems);
+                    _items.RemoveRange(e.OldItems);
                     break;
                 case NotifyCollectionChangedAction.Replace:
                     break;
                 case NotifyCollectionChangedAction.Reset:
-                    Items.Clear();
+                    _items.Clear();
                     break;
                 default:
                     break;
@@ -182,9 +195,8 @@ namespace Avalonia.Collections
 
         public override string ToString()
         {
-            return $"Root:{Items.Count}";
+            return $"{((IGroupingView)_items).Name}:{_items.Count} {((IGroupingView)_items).IsGrouping}";
         }
-
 
     }
 
