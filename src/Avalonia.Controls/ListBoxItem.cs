@@ -15,7 +15,12 @@ namespace Avalonia.Controls
         /// </summary>
         public static readonly StyledProperty<bool> IsSelectedProperty =
             AvaloniaProperty.Register<ListBoxItem, bool>(nameof(IsSelected));
+        public static int _count = 0;
 
+        public ListBoxItem()
+        {
+            _count++;
+        }
         /// <summary>
         /// Initializes static members of the <see cref="ListBoxItem"/> class.
         /// </summary>
@@ -33,6 +38,10 @@ namespace Avalonia.Controls
         {
             get { return GetValue(IsSelectedProperty); }
             set { SetValue(IsSelectedProperty, value); }
+        }
+        ~ListBoxItem()
+        {
+            System.Console.WriteLine($"Destructing ListBoxItem,  {--_count}");
         }
     }
 }

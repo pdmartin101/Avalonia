@@ -36,13 +36,13 @@ namespace Avalonia.Controls.Presenters
         /// <inheritdoc/>
         public override double ExtentValue
         {
-            get => Items is IGroupingView gv ? gv.TotalItems : Items.Count();
+            get => 20; // Items is IGroupingView gv ? gv.TotalItems : Items.Count();
         }
 
         /// <inheritdoc/>
         public override double ViewportValue
         {
-            get { return 11; }
+            get { return 9; }
         }
 
         /// <inheritdoc/>
@@ -51,11 +51,11 @@ namespace Avalonia.Controls.Presenters
         /// <inheritdoc/>
         public override Size MeasureOverride(Size availableSize)
         {
-            System.Console.WriteLine($"Measure Realized {_realizedChildren} Info {_currentState} {availableSize}  {++_measureCount}");
+//            System.Console.WriteLine($"Measure Realized {_realizedChildren} Info {_currentState} {availableSize}  {++_measureCount}");
             UpdateControls();
             if (!Owner.Bounds.Size.IsDefault)
                 _realizedChildren.RemoveChildren(_currentState);
-            System.Console.WriteLine($"Measured Realized {_realizedChildren} Info {_currentState} {_estimatedSize}  {_measureCount}");
+ //           System.Console.WriteLine($"Measured Realized {_realizedChildren} Info {_currentState} {_estimatedSize}  {_measureCount}");
             if (VirtualizingPanel.ScrollDirection == Layout.Orientation.Vertical)
                 return _estimatedSize;
             return _estimatedSize;
@@ -63,37 +63,24 @@ namespace Avalonia.Controls.Presenters
 
         public override Size ArrangeOverride(Size finalSize)
         {
-//            System.Console.WriteLine($"Override {Id}  {finalSize}  {_realizedChildren.Count}  {++_overrideCount}");
-            var startOffset = _currentState.PanelOffset < 0?0: _currentState.PanelOffset;
-            var panelOffset = startOffset;
-            for (int i = _currentState.FirstInView; i < _currentState.LastInView+1; i++)
+            //            System.Console.WriteLine($"Override Realized {_realizedChildren} Info {_currentState}  {finalSize}  {++_overrideCount}");
+            if (Items is GroupingView gv)
             {
-                var control=_realizedChildren.ContainerFromIndex(i);
-                if ((i == _currentState.FirstInView) && (control is GroupItem gi) && (gi.Items is IGroupingView gv))
-                {
-                    var vp = gi.VirtualizingPanel;
-                    var headerSize = gi.Bounds.Size - vp.Bounds.Size;
-                    var scrollVal = gv.GetItemPosition((int)_scrollViewer.Offset.Y);
-                    var perItem = vp.Bounds.Size.Height / gi.Items.Count();
-                    var itemNum = gv.GetItemPosition((int)_scrollViewer.Offset.Y);
-                    if (scrollVal >= 0)
-                        startOffset -= headerSize.Height+perItem*itemNum;
-                }
+                var itemInfo = gv.GetItemFromScrollpos((int)_scrollViewer.Offset.Y);
+            }
+            foreach (var container in _realizedChildren)
+            {
+                var control = container.ContainerControl;
+                var startOffset = VirtualizingAverages.GetOffsetForIndex(VirtualizingPanel.TemplatedParent, container.Index, Items, Vertical);
                 if (Vertical)
-                {
                     control.Arrange(new Rect(new Point(0, startOffset), new Size(finalSize.Width, control.DesiredSize.Height)));
-                    startOffset += control.DesiredSize.Height;
-                }
                 else
-                {
-                    control.Arrange(new Rect(new Point(startOffset,0), new Size(control.DesiredSize.Width, finalSize.Height)));
-                    startOffset += control.DesiredSize.Width;
-                }
-                panelOffset = 0;
+                    control.Arrange(new Rect(new Point(startOffset, 0), new Size(control.DesiredSize.Width, finalSize.Height)));
             }
             Owner.Panel.Arrange(new Rect(finalSize));
             return finalSize;
         }
+
 
         /// <inheritdoc/>
         public override void UpdateControls()

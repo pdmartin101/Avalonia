@@ -48,14 +48,16 @@ namespace Avalonia.Controls.Presenters
                 int scrollVal = (int)_scrollViewer.Offset.Y;
                 if (_items is IGroupingView gv)
                     scrollVal=gv.GetItemPosition((int)_scrollViewer.Offset.Y);
-                info.SetFirst(scrollVal);
+                info.SetFirst(_panel.TemplatedParent, _items,scrollVal);
             }
             else
                 info.SetFirst(_panel.TemplatedParent, _items);
             var count = 0;
+            System.Console.WriteLine($"BeforeAdd {this} {info._currentOffset} {info.PanelOffset}");
             while (info.Realize(numItems))
             {
                 info.AddOffset(AddOneChild(info));
+                System.Console.WriteLine($"Add Item {this} {count} {info._currentOffset}");
                 count++;
             }
             if (_generator.Containers.Count()>100)
@@ -131,7 +133,7 @@ namespace Avalonia.Controls.Presenters
         public int NumInView { get; private set; }
         public int NumInFullView { get; private set; }
 
-        private double _currentOffset;
+        internal double _currentOffset;
         public bool Vert { get;}
         public int Next => FirstInView + NumInView;
 
@@ -139,11 +141,12 @@ namespace Avalonia.Controls.Presenters
         {
             Vert = vert;
         }
-        public void SetFirst(int first)
+        public void SetFirst( ITemplatedControl templatedParent, IEnumerable items, int first)
         {
             FirstInView = first<0?0:first;
             NumInView = 0;
             NumInFullView = 0;
+            _currentOffset = VirtualizingAverages.GetOffsetForIndex(templatedParent, FirstInView, items, Vert);
         }
 
         internal void AddOffset(double offset)

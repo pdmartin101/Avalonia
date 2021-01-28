@@ -12,6 +12,7 @@ namespace Avalonia.Controls.Generators
     public class GroupContainerGenerator : ItemContainerGenerator
     {
         private ItemsControl _overallOwner;
+        public static int _gcount = 0;
         /// <summary>
         /// Initializes a new instance of the <see cref="GroupContainerGenerator"/> class.
         /// </summary>
@@ -22,6 +23,7 @@ namespace Avalonia.Controls.Generators
         {
             Contract.Requires<ArgumentNullException>(owner != null);
             _overallOwner = overallOwner;
+            _gcount++;
         }
 
         /// <inheritdoc/>
@@ -98,5 +100,11 @@ namespace Avalonia.Controls.Generators
 
             return true;
         }
+
+        ~GroupContainerGenerator()
+        {
+            System.Console.WriteLine($"Destructing GroupContainerGenerator,  {--_gcount}");
+        }
+
     }
 }
