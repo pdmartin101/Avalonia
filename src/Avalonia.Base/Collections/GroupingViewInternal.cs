@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
@@ -269,6 +270,32 @@ namespace Avalonia.Collections
             }
             _itemScrollEnd = _itemScrollStart + Count-1;
             return _itemScrollStart + Count;
+        }
+
+        internal GroupingItemScrolling GetItemFromScrollpos(int scrollPos, GroupingItemScrolling gis)
+        {
+            if (!_isGrouping)
+            {
+                var pos = scrollPos - ((IGroupingView)this).ItemScrollStart;
+                gis.GroupPositions.Add(pos);
+                gis.Item = _items.ElementAt(pos);
+                return gis;
+            }
+            var count = 0;
+            foreach (IGroupingView item in _items)
+            {
+                if (item.ItemScrollEnd >= scrollPos)
+                {
+                    gis.GroupPositions.Add(count);
+                    if (item.ItemScrollStart > scrollPos)
+                    {
+                        return gis;
+                    }
+                    return ((GroupingViewInternal)item).GetItemFromScrollpos(scrollPos, gis);
+                }
+                count++;
+            }
+            throw new NotImplementedException();
         }
 
         #region Private Methods

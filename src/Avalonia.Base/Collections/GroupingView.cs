@@ -5,7 +5,7 @@ using System.ComponentModel;
 
 namespace Avalonia.Collections
 {
-    public interface IGroupingView: IEnumerable
+    public interface IGroupingView : IEnumerable
     {
         public object Name { get; }
         public bool IsGrouping { get; }
@@ -50,6 +50,9 @@ namespace Avalonia.Collections
             get { return _test; }
             set { SetTest(value); }
         }
+        #endregion
+
+        #region IGroupingView
 
         object IGroupingView.Name => ((IGroupingView)_items).Name;
         IGroupingView IGroupingView.Items => _items;
@@ -59,6 +62,10 @@ namespace Avalonia.Collections
         int IGroupingView.TotalItems => ((IGroupingView)_items).TotalItems;
         int IGroupingView.ItemScrollStart => ((IGroupingView)_items).ItemScrollStart;
         int IGroupingView.ItemScrollEnd => ((IGroupingView)_items).ItemScrollEnd;
+        int IGroupingView.GetItemPosition(int scrollVal)
+        {
+            return ((IGroupingView)_items).GetItemPosition(scrollVal);
+        }
 
         #endregion
 
@@ -127,11 +134,12 @@ namespace Avalonia.Collections
                 _items.AddRange(Source);
             }
         }
-        public int GetItemPosition(int scrollVal)
-        {
-            return ((IGroupingView)_items).GetItemPosition(scrollVal);
-        }
 
+        public GroupingItemScrolling GetItemFromScrollpos(int scrollPos)
+        {
+            var gis = new GroupingItemScrolling();
+            return ((GroupingViewInternal)_items).GetItemFromScrollpos(scrollPos, gis);
+        }
         #endregion
 
         #region IAvaloniaList<object> Enumerators
@@ -204,6 +212,12 @@ namespace Avalonia.Collections
     {
         public string GroupPath { get; set; }
         public string NullStr { get; set; }
+    }
+
+    public class GroupingItemScrolling
+    {
+        public object Item { get; set; }
+        public List<int> GroupPositions { get; set; } = new List<int>();
     }
 
 }

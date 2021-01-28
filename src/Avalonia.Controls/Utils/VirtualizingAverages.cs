@@ -25,7 +25,7 @@ namespace Avalonia.Controls.Utils
             return sizes.AddContainerSize(item, size);
         }
  
-        private static bool GetContainerSize(ITemplatedControl control, object item,bool vert, out Size size)
+        private static bool GetContainerSize(ITemplatedControl control, object item, out Size size)
         {
             VirtualizingSizes sizes;
             var templatedParent = GetTopTemplatedParent(control);
@@ -53,7 +53,7 @@ namespace Avalonia.Controls.Utils
             foreach (var item in items)
             {
                 countItems++;
-                if (GetContainerSize(templatedParent, item, vert, out var size))
+                if (GetContainerSize(templatedParent, item,  out var size))
                 {
                     countKnown++;
                     if (vert)

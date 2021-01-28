@@ -19,6 +19,7 @@ namespace Avalonia.Controls
         public ItemVirtualizationMode VirtualizationMode { get; set; } = ItemVirtualizationMode.Smooth;
         public ItemsControl GroupParent { get; set; }
         public IPanel VirtualizingPanel => Presenter?.Panel;
+        public static int _count = 0;
 
 
         public GroupItem(ItemsControl itemsControl)
@@ -26,6 +27,7 @@ namespace Avalonia.Controls
             if (itemsControl is GroupItem gi)
                 Level = gi.Level + 1;
             Name = $"Level{Level,2:00}";
+            _count++;
         }
 
         protected override IItemContainerGenerator CreateItemContainerGenerator()
@@ -56,7 +58,7 @@ namespace Avalonia.Controls
         //}
         ~GroupItem()
         {
-            System.Console.WriteLine($"Destructing GroupItem, {Items}");
+            System.Console.WriteLine($"Destructing GroupItem, {Items}  {--_count}");
         }
 
     }

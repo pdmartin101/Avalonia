@@ -27,6 +27,7 @@ namespace Avalonia.Controls.Presenters
         private bool _canHorizontallyScroll;
         private bool _canVerticallyScroll;
         private EventHandler _scrollInvalidated;
+        public static int _count = 0;
 
         /// <summary>
         /// Initializes static members of the <see cref="ItemsPresenter"/> class.
@@ -41,6 +42,10 @@ namespace Avalonia.Controls.Presenters
                 .AddClassHandler<ItemsPresenter>((x, e) => x.VirtualizationModeChanged(e));
         }
 
+        public ItemsPresenter()
+        {
+            _count++;
+        }
         /// <summary>
         /// Gets or sets the virtualization mode for the items.
         /// </summary>
@@ -197,7 +202,7 @@ namespace Avalonia.Controls.Presenters
 
         ~ItemsPresenter()
         {
-            System.Console.WriteLine($"Destructing ItemsPresenter, {Items}");
+            System.Console.WriteLine($"Destructing ItemsPresenter, {Items} {--_count}");
         }
     }
 }

@@ -13,6 +13,7 @@ namespace Avalonia.Controls.Generators
     public class ItemContainerGenerator : IItemContainerGenerator
     {
         private SortedDictionary<int, ItemContainerInfo> _containers = new SortedDictionary<int, ItemContainerInfo>();
+        public static int _count = 0;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ItemContainerGenerator"/> class.
@@ -23,6 +24,7 @@ namespace Avalonia.Controls.Generators
             Contract.Requires<ArgumentNullException>(owner != null);
 
             Owner = owner;
+            _count++;
         }
 
         /// <inheritdoc/>
@@ -236,6 +238,11 @@ namespace Avalonia.Controls.Generators
         protected void RaiseRecycled(ItemContainerEventArgs e)
         {
             Recycled?.Invoke(this, e);
+        }
+
+        ~ItemContainerGenerator()
+        {
+            System.Console.WriteLine($"Destructing ItemContainerGenerator,  {--_count}");
         }
     }
 }

@@ -34,11 +34,11 @@ namespace Avalonia.Controls.Presenters
         /// <inheritdoc/>
         public override Size MeasureOverride(Size availableSize)
         {
-            System.Console.WriteLine($"Measure Realized {_realizedChildren} Info {_currentState} {availableSize}  {++_measureCount}");
+//            System.Console.WriteLine($"Measure Realized {_realizedChildren} Info {_currentState} {availableSize}  {++_measureCount}");
             UpdateControls();
             if (!Owner.Bounds.Size.IsDefault)
                 _realizedChildren.RemoveChildren(_currentState);
-            System.Console.WriteLine($"Measured Realized {_realizedChildren} Info {_currentState} {_estimatedSize}  {_measureCount}");
+//            System.Console.WriteLine($"Measured Realized {_realizedChildren} Info {_currentState} {_estimatedSize}  {_measureCount}");
             if (VirtualizingPanel.ScrollDirection == Layout.Orientation.Vertical)
                 return _estimatedSize;
             return _estimatedSize;
