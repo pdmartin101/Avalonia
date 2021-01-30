@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Specialized;
+using System.Security.Cryptography;
 using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
@@ -77,6 +78,10 @@ namespace Avalonia.Controls
         {
             InvalidateMeasure();
             _forceRemeasure = true;
+        }
+        void IVirtualizingPanel.AdjustPosition(Point adjust)
+        {
+            Margin = new Thickness(0, Margin.Top -adjust.Y, 0, Margin.Bottom+adjust.Y);
         }
 
         protected override Size MeasureOverride(Size availableSize)
@@ -259,5 +264,6 @@ namespace Avalonia.Controls
             _averageItemSize = ((_averageItemSize * _averageCount) - value) / (_averageCount - 1);
             --_averageCount;
         }
+
     }
 }

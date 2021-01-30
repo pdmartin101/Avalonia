@@ -272,26 +272,25 @@ namespace Avalonia.Collections
             return _itemScrollStart + Count;
         }
 
-        internal GroupingItemScrolling GetItemFromScrollpos(int scrollPos, GroupingItemScrolling gis)
+        internal object GetItemFromScrollpos(int scrollPos)
         {
             if (!_isGrouping)
             {
                 var pos = scrollPos - ((IGroupingView)this).ItemScrollStart;
-                gis.GroupPositions.Add(pos);
-                gis.Item = _items.ElementAt(pos);
-                return gis;
+//                gis.GroupPositions.Add(pos);
+                return _items.ElementAt(pos);
             }
             var count = 0;
             foreach (IGroupingView item in _items)
             {
                 if (item.ItemScrollEnd >= scrollPos)
                 {
-                    gis.GroupPositions.Add(count);
+//                    gis.GroupPositions.Add(count);
                     if (item.ItemScrollStart > scrollPos)
                     {
-                        return gis;
+                        return item;
                     }
-                    return ((GroupingViewInternal)item).GetItemFromScrollpos(scrollPos, gis);
+                    return ((GroupingViewInternal)item).GetItemFromScrollpos(scrollPos);
                 }
                 count++;
             }

@@ -75,5 +75,9 @@ namespace Avalonia.Controls
             throw new NotImplementedException();
         }
 
+        void IVirtualizingPanel.AdjustPosition(Point adjust)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

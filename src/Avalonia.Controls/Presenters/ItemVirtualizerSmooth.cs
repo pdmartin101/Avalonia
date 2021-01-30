@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Specialized;
 using System.Reactive.Linq;
+using Avalonia.Collections;
 using Avalonia.Controls.Utils;
 using Avalonia.VisualTree;
 
@@ -34,11 +35,11 @@ namespace Avalonia.Controls.Presenters
         /// <inheritdoc/>
         public override Size MeasureOverride(Size availableSize)
         {
-//            System.Console.WriteLine($"Measure Realized {_realizedChildren} Info {_currentState} {availableSize}  {++_measureCount}");
+            //            System.Console.WriteLine($"Measure Realized {_realizedChildren} Info {_currentState} {availableSize}  {++_measureCount}");
             UpdateControls();
             if (!Owner.Bounds.Size.IsDefault)
                 _realizedChildren.RemoveChildren(_currentState);
-//            System.Console.WriteLine($"Measured Realized {_realizedChildren} Info {_currentState} {_estimatedSize}  {_measureCount}");
+            //            System.Console.WriteLine($"Measured Realized {_realizedChildren} Info {_currentState} {_estimatedSize}  {_measureCount}");
             if (VirtualizingPanel.ScrollDirection == Layout.Orientation.Vertical)
                 return _estimatedSize;
             return _estimatedSize;
@@ -46,7 +47,11 @@ namespace Avalonia.Controls.Presenters
 
         public override Size ArrangeOverride(Size finalSize)
         {
-            //            System.Console.WriteLine($"Override Realized {_realizedChildren} Info {_currentState}  {finalSize}  {++_overrideCount}");
+            //            System.Console.WriteLine($"Arrange Realized {_realizedChildren} Info {_currentState}  {finalSize}  {++_overrideCount}");
+            if (Items is GroupingView gv)
+            {
+                VirtualizingPanel.AdjustPosition(new Point(0, -30));
+            }
             foreach (var container in _realizedChildren)
             {
                 var control = container.ContainerControl;
@@ -100,8 +105,7 @@ namespace Avalonia.Controls.Presenters
                     var materialized = generator.Materialize(0, Items.ElementAt(0));
                     VirtualizingPanel.Children.Insert(0, materialized.ContainerControl);
                     materialized.ContainerControl.Measure(Size.Infinity);
-                    var desiredItemSize = materialized.ContainerControl.DesiredSize;
-                    VirtualizingAverages.AddContainerSize(VirtualizingPanel.TemplatedParent, Items.ElementAt(0), desiredItemSize);
+                    VirtualizingAverages.AddContainerSize(VirtualizingPanel.TemplatedParent, Items.ElementAt(0), materialized.ContainerControl);
                     //VirtualizingPanel.Children.RemoveAt(0);
                     //generator.Dematerialize(0, 1);
                     //ItemsPresenter.InvalidateMeasure();
