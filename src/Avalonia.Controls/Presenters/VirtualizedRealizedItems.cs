@@ -53,11 +53,11 @@ namespace Avalonia.Controls.Presenters
             else
                 info.SetFirst(_panel.TemplatedParent, _items);
             var count = 0;
-            System.Console.WriteLine($"BeforeAdd {this} {info._currentOffset} {info.PanelOffset}");
+//            System.Console.WriteLine($"BeforeAdd {this} {info._currentOffset} {info.PanelOffset}");
             while (info.Realize(numItems))
             {
                 info.AddOffset(AddOneChild(info));
-                System.Console.WriteLine($"Add Item {this} {count} {info._currentOffset}");
+//                System.Console.WriteLine($"Add Item {this} {count} {info._currentOffset}");
                 count++;
             }
             if (_generator.Containers.Count()>100)
@@ -89,6 +89,9 @@ namespace Avalonia.Controls.Presenters
                 child = materialized.ContainerControl;
                 _panel.Children.Add(child);
                 child.Measure(Size.Infinity);
+//                System.Console.WriteLine($"Add Item00 {this} {info._currentOffset}");
+                if (VirtualizingAverages.AddContainerSize(_panel.TemplatedParent, _items.ElementAt(info.Next), child))
+                    _owner.InvalidateMeasure();
             }
             else
             {
@@ -97,10 +100,10 @@ namespace Avalonia.Controls.Presenters
                     gi.Presenter?.InvalidateMeasure();
                 }
                 child.Measure(Size.Infinity);
+//                System.Console.WriteLine($"Add Item01 {this} {info._currentOffset}");
+                if (VirtualizingAverages.AddContainerSize(_panel.TemplatedParent, _items.ElementAt(info.Next), child))
+                    _owner.InvalidateMeasure();
             }
-            var diff = VirtualizingAverages.AddContainerSize(_panel.TemplatedParent, _items.ElementAt(info.Next), child.DesiredSize);
-            if (diff != Size.Empty)
-                _owner.InvalidateMeasure();
             return info.Vert? child.DesiredSize.Height:child.DesiredSize.Width;
         }
         public IControl ContainerFromIndex(int indx)

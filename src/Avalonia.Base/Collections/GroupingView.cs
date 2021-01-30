@@ -135,10 +135,10 @@ namespace Avalonia.Collections
             }
         }
 
-        public GroupingItemScrolling GetItemFromScrollpos(int scrollPos)
+        public object GetItemFromScrollpos(int scrollPos)
         {
-            var gis = new GroupingItemScrolling();
-            return ((GroupingViewInternal)_items).GetItemFromScrollpos(scrollPos, gis);
+//            var gis = new GroupingItemScrolling();
+            return ((GroupingViewInternal)_items).GetItemFromScrollpos(scrollPos);
         }
         #endregion
 
@@ -217,7 +217,7 @@ namespace Avalonia.Collections
     public class GroupingItemScrolling
     {
         public object Item { get; set; }
-        public List<int> GroupPositions { get; set; } = new List<int>();
+//        public List<int> GroupPositions { get; set; } = new List<int>();
     }
 
 }

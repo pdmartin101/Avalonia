@@ -80,5 +80,7 @@ namespace Avalonia.Controls
         /// the available size hasn't changed.
         /// </remarks>
         void ForceInvalidateMeasure();
+
+        void AdjustPosition(Point adjust);
     }
 }

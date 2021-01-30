@@ -10,40 +10,46 @@ namespace Avalonia.Controls.Utils
     {
         private static Dictionary<ITemplatedControl, VirtualizingSizes> _controls = new Dictionary<ITemplatedControl, VirtualizingSizes>();
 
-        public static Size AddContainerSize(ITemplatedControl control, object item, Size size)
+        public static bool AddContainerSize(ITemplatedControl templatedControl, object vmItem, IControl control)
         {
-            if (size.IsDefault)
-            { }
             VirtualizingSizes sizes;
             //            System.Console.WriteLine($"VirtualizingControls:AddContainerSize {item}, {size}");
-            var templatedParent = GetTopTemplatedParent(control);
+            var templatedParent = GetTopTemplatedParent(templatedControl);
             if (!_controls.TryGetValue(templatedParent, out sizes))
             {
                 sizes = new VirtualizingSizes();
                 _controls.Add(templatedParent, sizes);
             }
-            return sizes.AddContainerSize(item, size);
+            return sizes.AddContainerSize(vmItem, control);
         }
  
-        private static bool GetContainerSize(ITemplatedControl control, object item, out Size size)
+        private static bool GetContainerSize(ITemplatedControl control, object item, out ContainerInfo containerInfo)
         {
             VirtualizingSizes sizes;
             var templatedParent = GetTopTemplatedParent(control);
-            size = new Size();
+            containerInfo = null;
             if (!_controls.TryGetValue(templatedParent, out sizes))
                 return false;
-            var ret = sizes.GetContainerSize(item, out size);
+            var ret = sizes.GetContainerSize(item, out containerInfo);
             return ret;
+        }
+
+        public static IControl GetControlForItem(ITemplatedControl control, object item)
+        {
+            var templatedParent = GetTopTemplatedParent(control);
+            if (!_controls.TryGetValue(templatedParent, out var sizes))
+                return null;
+            return sizes.GetControlForItem(item);
         }
 
         public static Size GetEstimatedExtent(ITemplatedControl control, IEnumerable items, bool vert)
         {
             var templatedParent = GetTopTemplatedParent(control);
-            var av= GetEstimatedAverage(templatedParent, items, vert);
-            return vert ? av.WithHeight(av.Height * items.Count()) : av.WithWidth(av.Width*items.Count());
+            var av = GetEstimatedAverage(templatedParent, items, vert);
+            return vert ? av.WithHeight(av.Height * items.Count()) : av.WithWidth(av.Width * items.Count());
         }
 
-        public static Size GetEstimatedAverage(ITemplatedControl control, IEnumerable items, bool vert)
+        private static Size GetEstimatedAverage(ITemplatedControl control, IEnumerable items, bool vert)
         {
             var totalKnown = 0.0;
             var largestOther = 0.0;
@@ -53,20 +59,20 @@ namespace Avalonia.Controls.Utils
             foreach (var item in items)
             {
                 countItems++;
-                if (GetContainerSize(templatedParent, item,  out var size))
+                if (GetContainerSize(templatedParent, item,  out var containerInfo))
                 {
                     countKnown++;
                     if (vert)
                     {
-                        totalKnown += size.Height;
-                        if (size.Width > largestOther)
-                            largestOther = size.Width;
+                        totalKnown += containerInfo.ContainerSize.Height;
+                        if (containerInfo.ContainerSize.Width > largestOther)
+                            largestOther = containerInfo.ContainerSize.Width;
                     }
                     else
                     {
-                        totalKnown += size.Width;
-                        if (size.Height > largestOther)
-                            largestOther = size.Height;
+                        totalKnown += containerInfo.ContainerSize.Width;
+                        if (containerInfo.ContainerSize.Height > largestOther)
+                            largestOther = containerInfo.ContainerSize.Height;
                     }
                 }
             }
@@ -119,28 +125,28 @@ namespace Avalonia.Controls.Utils
     }
     public class VirtualizingSizes
     {
-        private Dictionary<object, Size> _containers = new Dictionary<object, Size>();
+        private Dictionary<object, ContainerInfo> _containers = new Dictionary<object, ContainerInfo>();
         private double _vTotal = 0.0;
         private double _hTotal = 0.0;
         public double VertAverage => _containers.Count == 0 ? 0.0 : _vTotal / _containers.Count;
         public double HorizAverage => _containers.Count == 0 ? 0.0 : _hTotal / _containers.Count;
-        public Size AddContainerSize(object item, Size size)
+        public bool AddContainerSize(object item, IControl control)
         {
-            var savedSize=Size.Empty;
-            if (_containers.TryGetValue(item, out savedSize))
+            if (_containers.TryGetValue(item, out var savedInfo))
             {
                 _containers.Remove(item);
-                _vTotal -= savedSize.Height;
-                _hTotal -= savedSize.Width;
+                _vTotal -= savedInfo.ContainerSize.Height;
+                _hTotal -= savedInfo.ContainerSize.Width;
             }
-            _containers.Add(item, size);
-            _vTotal += size.Height;
-            _hTotal += size.Width;
-            return size - savedSize;
+            var container = new ContainerInfo(control);
+            _containers.Add(item, container);
+            _vTotal += container.ContainerSize.Height;
+            _hTotal += container.ContainerSize.Width;
+            return (savedInfo==null) || (savedInfo.ContainerSize != container.ContainerSize);
         }
-        public bool GetContainerSize(object item, out Size size)
+        internal bool GetContainerSize(object item, out ContainerInfo containerInfo)
         {
-            if (_containers.TryGetValue(item, out size))
+            if (_containers.TryGetValue(item, out containerInfo))
                 return true;
             return false;
         }
@@ -150,8 +156,8 @@ namespace Avalonia.Controls.Utils
             var startIndx = 0;
             foreach (var item in items)
             {
-                if (_containers.TryGetValue(item, out var size))
-                    currentPos += vert ? size.Height : size.Width;
+                if (_containers.TryGetValue(item, out var containerInfo))
+                    currentPos += vert ? containerInfo.ContainerSize.Height : containerInfo.ContainerSize.Width;
                 else
                     currentPos += vert ? VertAverage : HorizAverage;
                 if (currentPos > offset)
@@ -169,8 +175,8 @@ namespace Avalonia.Controls.Utils
             {
                 if (startIndx == indx)
                     break;
-                if (_containers.TryGetValue(item, out var size))
-                    currentPos += vert?size.Height:size.Width;
+                if (_containers.TryGetValue(item, out var containerInfo))
+                    currentPos += vert? containerInfo.ContainerSize.Height: containerInfo.ContainerSize.Width;
                 else
                     currentPos += vert ? VertAverage : HorizAverage;
                 startIndx++;
@@ -178,5 +184,24 @@ namespace Avalonia.Controls.Utils
             return currentPos;
         }
 
+        internal IControl GetControlForItem(object item)
+        {
+            if (_containers.TryGetValue(item, out var containerInfo))
+                if (containerInfo.Container.TryGetTarget(out var control))
+                    return control;
+            return null;
+        }
+    }
+
+    class ContainerInfo
+    {
+        public WeakReference<IControl> Container { get; }
+        public Size ContainerSize { get; }    // this can out live Container
+
+        public ContainerInfo(IControl control)
+        {
+            Container = new WeakReference<IControl>(control);
+            ContainerSize = control.DesiredSize;
+        }
     }
 }

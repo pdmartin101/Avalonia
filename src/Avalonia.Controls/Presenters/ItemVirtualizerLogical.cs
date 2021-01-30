@@ -30,7 +30,7 @@ namespace Avalonia.Controls.Presenters
             var scrollViewer = VirtualizingPanel.FindAncestorOfType<ScrollViewer>();
             Id = _idCount++;
             _realizedChildren = new VirtualizedRealizedItems(Owner, Id);
-            System.Console.WriteLine($"Constructing {Id}, {Items} {++_count}");
+//            System.Console.WriteLine($"Constructing {Id}, {Items} {++_count}");
         }
 
         /// <inheritdoc/>
@@ -51,11 +51,15 @@ namespace Avalonia.Controls.Presenters
         /// <inheritdoc/>
         public override Size MeasureOverride(Size availableSize)
         {
-//            System.Console.WriteLine($"Measure Realized {_realizedChildren} Info {_currentState} {availableSize}  {++_measureCount}");
+            if (Id == 403)
+            { }
+            if (Id == 400)
+            { }
+            //            System.Console.WriteLine($"Measure Realized {_realizedChildren} Info {_currentState} {availableSize}  {++_measureCount}");
             UpdateControls();
             if (!Owner.Bounds.Size.IsDefault)
                 _realizedChildren.RemoveChildren(_currentState);
- //           System.Console.WriteLine($"Measured Realized {_realizedChildren} Info {_currentState} {_estimatedSize}  {_measureCount}");
+            //           System.Console.WriteLine($"Measured Realized {_realizedChildren} Info {_currentState} {_estimatedSize}  {_measureCount}");
             if (VirtualizingPanel.ScrollDirection == Layout.Orientation.Vertical)
                 return _estimatedSize;
             return _estimatedSize;
@@ -63,10 +67,35 @@ namespace Avalonia.Controls.Presenters
 
         public override Size ArrangeOverride(Size finalSize)
         {
-            //            System.Console.WriteLine($"Override Realized {_realizedChildren} Info {_currentState}  {finalSize}  {++_overrideCount}");
+            var adjust = 0.0;
+            System.Console.WriteLine($"Arrange Realized {_realizedChildren} Info {_currentState}  {finalSize}  {++_overrideCount}");
             if (Items is GroupingView gv)
             {
-                var itemInfo = gv.GetItemFromScrollpos((int)_scrollViewer.Offset.Y);
+                var vm = gv.GetItemFromScrollpos((int)_scrollViewer.Offset.Y);
+                if (vm != null)
+                {
+                    var firstControl = VirtualizingAverages.GetControlForItem(VirtualizingPanel.TemplatedParent, vm);
+                    if ((firstControl?.Parent != null) && (firstControl.Bounds != Rect.Empty))
+                    {
+                        var rel = firstControl.TranslatePoint(new Point(0, 0), _scrollViewer).Value;
+                        var rel2 = VirtualizingPanel.TranslatePoint(new Point(0, 0), _scrollViewer).Value;
+                        adjust = rel.Y - rel2.Y;
+                        System.Console.WriteLine($"Rel00 {rel.Y}   {rel2.Y}  {_scrollViewer.Offset.Y}   {VirtualizingPanel.Margin.Top}");
+                        VirtualizingPanel.AdjustPosition(rel);
+                        System.Console.WriteLine($"Rel01 {rel.Y}   {rel2.Y}  {_scrollViewer.Offset.Y}   {VirtualizingPanel.Margin.Top}");
+                        VirtualizingPanel.InvalidateArrange();
+                        System.Console.WriteLine($"Rel02 {rel.Y}   {rel2.Y}  {_scrollViewer.Offset.Y}   {VirtualizingPanel.Margin.Top}");
+                    }
+                    //else if (firstControl?.Parent != null)
+                    //{
+                    //    firstControl.InvalidateMeasure();
+                    //    firstControl.InvalidateArrange();
+                    //    VirtualizingPanel.ForceInvalidateMeasure();
+                    //    VirtualizingPanel.InvalidateArrange();
+                    //    VirtualizingPanel.Parent.InvalidateMeasure();
+                    //    VirtualizingPanel.Parent.InvalidateArrange();
+                    //}
+                }
             }
             foreach (var container in _realizedChildren)
             {
@@ -122,13 +151,12 @@ namespace Avalonia.Controls.Presenters
                     var materialized = generator.Materialize(0, Items.ElementAt(0));
                     VirtualizingPanel.Children.Insert(0, materialized.ContainerControl);
                     materialized.ContainerControl.Measure(Size.Infinity);
-                    var desiredItemSize = materialized.ContainerControl.DesiredSize;
-                    VirtualizingAverages.AddContainerSize(VirtualizingPanel.TemplatedParent, Items.ElementAt(0), desiredItemSize);
+                    VirtualizingAverages.AddContainerSize(VirtualizingPanel.TemplatedParent, Items.ElementAt(0), materialized.ContainerControl);
                     //VirtualizingPanel.Children.RemoveAt(0);
                     //generator.Dematerialize(0, 1);
                     //ItemsPresenter.InvalidateMeasure();
                     _estimated = true;
-                    System.Console.WriteLine($"Estimate {Id} Items:{Items} ");
+ //                   System.Console.WriteLine($"Estimate {Id} Items:{Items} ");
                 }
             }
             else if (Items != null && VirtualizingPanel.IsAttachedToVisualTree)
