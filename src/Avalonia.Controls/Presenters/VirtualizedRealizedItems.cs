@@ -4,7 +4,6 @@ using System.Linq;
 using Avalonia.Collections;
 using Avalonia.Controls.Generators;
 using Avalonia.Controls.Utils;
-using Avalonia.Styling;
 using Avalonia.VisualTree;
 
 namespace Avalonia.Controls.Presenters
@@ -39,7 +38,7 @@ namespace Avalonia.Controls.Presenters
             return _generator.Containers.GetEnumerator();
         }
 
-        public void AddChildren(RealizedChildrenInfo info)
+        public void AddChildren(VirtualizedRealizedItemsInfo info)
         {
             var numItems = _items.Count();
             info.SetPanelRelative(-_panel.TranslatePoint(new Point(0, 0), _scrollViewer).Value, _scrollViewer.Bounds.Size);
@@ -48,24 +47,22 @@ namespace Avalonia.Controls.Presenters
                 int scrollVal = (int)_scrollViewer.Offset.Y;
                 if (_items is IGroupingView gv)
                     scrollVal=gv.GetItemPosition((int)_scrollViewer.Offset.Y);
-                info.SetFirst(_panel.TemplatedParent, _items,scrollVal);
+                info.SetFirst(_items,scrollVal);
             }
             else
-                info.SetFirst(_panel.TemplatedParent, _items);
+                info.SetFirst(_items);
             var count = 0;
 //            System.Console.WriteLine($"BeforeAdd {this} {info._currentOffset} {info.PanelOffset}");
-            while (info.Realize(numItems))
+            while (info.RealizeNeeded(numItems))
             {
                 info.AddOffset(AddOneChild(info));
 //                System.Console.WriteLine($"Add Item {this} {count} {info._currentOffset}");
                 count++;
             }
-            if (_generator.Containers.Count()>100)
-            { }
             System.Console.WriteLine($"AddChildren Realized {this} {count} Info {info}  Scroller Height {_scrollViewer.Bounds.Height}");
         }
 
-        public void RemoveChildren(RealizedChildrenInfo info)
+        public void RemoveChildren(VirtualizedRealizedItemsInfo info)
         {
             var toRemove = new List<int>();
             foreach (var item in _generator.Containers)
@@ -80,7 +77,7 @@ namespace Avalonia.Controls.Presenters
                     _panel.Children.Remove(container.ContainerControl);
         }
 
-        internal double AddOneChild(RealizedChildrenInfo info)
+        internal double AddOneChild(VirtualizedRealizedItemsInfo info)
         {
             var child = _generator.ContainerFromIndex(info.Next);
             if (child == null)
@@ -123,73 +120,6 @@ namespace Avalonia.Controls.Presenters
         public override string ToString()
         {
             return $"{_id}  Items:{_items}   Generator:{_generator.Containers.Count()}";
-        }
-    }
-
-    class RealizedChildrenInfo
-    {
-        public double PanelOffset { get; private set; }
-        public double HiOffset { get; private set; }
-        public int FirstInView { get; private set; }
-        public int LastInView => FirstInView + NumInView-1;
-        public int LastInFullView => FirstInView + NumInFullView-1;
-        public int NumInView { get; private set; }
-        public int NumInFullView { get; private set; }
-
-        internal double _currentOffset;
-        public bool Vert { get;}
-        public int Next => FirstInView + NumInView;
-
-        public RealizedChildrenInfo(bool vert)
-        {
-            Vert = vert;
-        }
-        public void SetFirst( ITemplatedControl templatedParent, IEnumerable items, int first)
-        {
-            FirstInView = first<0?0:first;
-            NumInView = 0;
-            NumInFullView = 0;
-            _currentOffset = VirtualizingAverages.GetOffsetForIndex(templatedParent, FirstInView, items, Vert);
-        }
-
-        internal void AddOffset(double offset)
-        {
-            _currentOffset += offset;
-            if (_currentOffset <= HiOffset)
-                NumInFullView++;
-            NumInView++;
-        }
-
-        internal void SetPanelRelative(Point relPos, Size size)
-        {
-            PanelOffset = Vert ? relPos.Y : relPos.X;
-            _currentOffset = PanelOffset;
-            HiOffset = PanelOffset + (Vert ? size.Height : size.Width);
-        }
-
-        internal bool Realize(int numItems)
-        {
-            return _currentOffset < HiOffset && Next < numItems;
-        }
-
-        internal void SetFirst(ITemplatedControl templatedParent, IEnumerable items)
-        {
-            FirstInView = VirtualizingAverages.GetStartIndex(templatedParent, PanelOffset, items, Vert);
-            _currentOffset = VirtualizingAverages.GetOffsetForIndex(templatedParent, FirstInView, items, Vert);
-            NumInView = 0;
-            NumInFullView = 0;
-        }
-
-        internal bool CheckForRemoval(int indx)
-        {
-            if ((indx < FirstInView) || (indx > LastInView))
-                return true;
-            return false;
-        }
-
-        public override string ToString()
-        {
-            return $"{PanelOffset}:{HiOffset}  {FirstInView}:{LastInView}";
         }
     }
 }

@@ -17,6 +17,7 @@ namespace Avalonia.Controls
     {
         public int Level { get; set; }
         public ItemVirtualizationMode VirtualizationMode { get; set; } = ItemVirtualizationMode.Smooth;
+        public ItemVirtualizingCache VirtualizingCache { get; set; }
         public ItemsControl GroupParent { get; set; }
         public IPanel VirtualizingPanel => Presenter?.Panel;
         public static int _count = 0;
@@ -35,6 +36,7 @@ namespace Avalonia.Controls
             if (Presenter is ItemsPresenter ip)
             {
                 ip.VirtualizationMode = VirtualizationMode;
+                ip.VirtualizingCache = VirtualizingCache;
                 ip.SetValue(ItemsPresenter.ItemsPanelProperty, ItemsPanel);   // this can be done with a template binding in style, but this simplifies xaml
             }
             if ((Items is IGroupingView igv) && (igv.IsGrouping))

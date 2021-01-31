@@ -38,6 +38,7 @@ namespace Avalonia.Collections
         int IGroupingView.Count => Count;
 
         int IGroupingView.TotalItems => TotalItemCount();
+        int IGroupingView.TotalGroups => TotalGroupCount();
         int IGroupingView.ItemScrollStart => _itemScrollStart;
         int IGroupingView.ItemScrollEnd => _itemScrollEnd;
 
@@ -67,6 +68,17 @@ namespace Avalonia.Collections
                     sum += ((IGroupingView)item).Count;
             else
                 sum = Count;
+            return sum;
+        }
+
+        int TotalGroupCount()
+        {
+            var sum = 0;
+            if (_isGrouping)
+                foreach (var item in _items)
+                    sum += ((IGroupingView)item).TotalGroups;
+            else
+                return _groupLevel==0?0:1;
             return sum;
         }
 

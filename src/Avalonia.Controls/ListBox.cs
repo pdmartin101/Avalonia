@@ -1,4 +1,5 @@
 using System.Collections;
+using Avalonia.Collections;
 using Avalonia.Controls.Generators;
 using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
@@ -140,7 +141,13 @@ namespace Avalonia.Controls
                 ListBoxItem.ContentProperty,
                 ListBoxItem.ContentTemplateProperty);
         }
-
+        /// <inheritdoc/>
+        protected override IItemContainerGenerator CreateBranchItemContainerGenerator()
+        {
+            if ((Items is IGroupingView gvl) && (gvl.IsGrouping))
+                return new GroupContainerGenerator(this, this);
+            return base.CreateBranchItemContainerGenerator();
+        }
         /// <inheritdoc/>
         protected override void OnGotFocus(GotFocusEventArgs e)
         {

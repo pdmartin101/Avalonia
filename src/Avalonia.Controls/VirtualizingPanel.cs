@@ -77,7 +77,7 @@ namespace Avalonia.Controls
 
         void IVirtualizingPanel.AdjustPosition(Point adjust)
         {
-            throw new NotImplementedException();
+            Margin = new Thickness(0, Margin.Top - adjust.Y, 0, Margin.Bottom + adjust.Y);
         }
     }
 }

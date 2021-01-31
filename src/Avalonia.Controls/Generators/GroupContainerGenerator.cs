@@ -46,8 +46,11 @@ namespace Avalonia.Controls.Generators
                 result.Items = (GroupingViewInternal)item;
                 result.SetValue(GroupItem.ItemsPanelProperty, itemsControl.ItemsPanel);
                 result.ItemTemplate = itemsControl?.ItemTemplate;
-                if (presenter !=null)
+                if (presenter != null)
+                {
                     result.VirtualizationMode = presenter.VirtualizationMode;
+                    result.VirtualizingCache = presenter.VirtualizingCache;
+                }
                 if (!(item is IControl))
                     result.DataContext = item;
 

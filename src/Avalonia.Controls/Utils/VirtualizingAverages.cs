@@ -49,7 +49,7 @@ namespace Avalonia.Controls.Utils
             return vert ? av.WithHeight(av.Height * items.Count()) : av.WithWidth(av.Width * items.Count());
         }
 
-        private static Size GetEstimatedAverage(ITemplatedControl control, IEnumerable items, bool vert)
+        public static Size GetEstimatedAverage(ITemplatedControl control, IEnumerable items, bool vert)
         {
             var totalKnown = 0.0;
             var largestOther = 0.0;

@@ -38,6 +38,34 @@ namespace Avalonia.Controls
         //    virt.CacheBefore = ia.Length > 1 ? ia[1] : DefaultBack;
         //}
 
+        public double GetBackCacheSize(double viewPort, double item)
+        {
+            return 100;
+            switch (CacheLengthUnit)
+            {
+                case CacheLengthUnitEnum.Page:
+                    return CacheBefore * viewPort;
+                case CacheLengthUnitEnum.Pixel:
+                    return CacheBefore;
+                case CacheLengthUnitEnum.Item:
+                    return CacheBefore * item;
+            }
+            return 10;
+        }
+        public double GetFwdCacheSize(double viewPort, double item)
+        {
+            return 50;
+            switch (CacheLengthUnit)
+            {
+                case CacheLengthUnitEnum.Page:
+                    return CacheAfter * viewPort;
+                case CacheLengthUnitEnum.Pixel:
+                    return CacheAfter;
+                case CacheLengthUnitEnum.Item:
+                    return CacheAfter * item;
+            }
+            return 10;
+        }
         public override string ToString()
         {
             return $"{CacheLengthUnit} {CacheAfter},{CacheBefore} {CacheAfterExtra},{CacheBeforeExtra}";
