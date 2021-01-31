@@ -13,6 +13,7 @@ namespace Avalonia.Collections
         public IGroupingView Items { get; }
         int Count { get; }
         int TotalItems { get; }
+        int TotalGroups { get; }
         int ItemScrollStart { get; }
         int ItemScrollEnd { get; }
         int GetItemPosition(int scrollVal);
@@ -60,6 +61,7 @@ namespace Avalonia.Collections
 
         bool IGroupingView.IsGrouping => ((IGroupingView)_items).IsGrouping;
         int IGroupingView.TotalItems => ((IGroupingView)_items).TotalItems;
+        int IGroupingView.TotalGroups => ((IGroupingView)_items).TotalGroups;
         int IGroupingView.ItemScrollStart => ((IGroupingView)_items).ItemScrollStart;
         int IGroupingView.ItemScrollEnd => ((IGroupingView)_items).ItemScrollEnd;
         int IGroupingView.GetItemPosition(int scrollVal)

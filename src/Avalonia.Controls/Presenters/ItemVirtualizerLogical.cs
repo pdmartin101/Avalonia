@@ -14,7 +14,7 @@ namespace Avalonia.Controls.Presenters
     internal class ItemVirtualizerLogical : ItemVirtualizer
     {
         private VirtualizedRealizedItems _realizedChildren;
-        private RealizedChildrenInfo _currentState;
+        private VirtualizedRealizedItemsInfo _currentState;
         public int Id;
         private bool _estimated;
         private Size _estimatedSize;
@@ -26,7 +26,7 @@ namespace Avalonia.Controls.Presenters
         public ItemVirtualizerLogical(ItemsPresenter owner)
             : base(owner)
         {
-            _currentState = new RealizedChildrenInfo(Vertical);
+            _currentState = new VirtualizedRealizedItemsInfo(Vertical, owner.VirtualizingCache, owner.TemplatedParent);
             var scrollViewer = VirtualizingPanel.FindAncestorOfType<ScrollViewer>();
             Id = _idCount++;
             _realizedChildren = new VirtualizedRealizedItems(Owner, Id);
@@ -36,7 +36,7 @@ namespace Avalonia.Controls.Presenters
         /// <inheritdoc/>
         public override double ExtentValue
         {
-            get => 20; // Items is IGroupingView gv ? gv.TotalItems : Items.Count();
+            get => 20; // Items is IGroupingView gv ? gv.TotalItems+gv.TotalGroups : Items.Count();
         }
 
         /// <inheritdoc/>

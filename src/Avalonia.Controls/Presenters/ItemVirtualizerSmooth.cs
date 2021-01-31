@@ -14,7 +14,7 @@ namespace Avalonia.Controls.Presenters
     internal class ItemVirtualizerSmooth : ItemVirtualizer
     {
         private VirtualizedRealizedItems _realizedChildren;
-        private RealizedChildrenInfo _currentState;
+        private VirtualizedRealizedItemsInfo _currentState;
         public int Id;
         private bool _estimated;
         private Size _estimatedSize;
@@ -25,8 +25,7 @@ namespace Avalonia.Controls.Presenters
         public ItemVirtualizerSmooth(ItemsPresenter owner)
             : base(owner)
         {
-            _currentState = new RealizedChildrenInfo(Vertical);
-            var scrollViewer = VirtualizingPanel.FindAncestorOfType<ScrollViewer>();
+            _currentState = new VirtualizedRealizedItemsInfo(Vertical,owner.VirtualizingCache, owner.TemplatedParent);
             Id = _idCount++;
             _realizedChildren = new VirtualizedRealizedItems(Owner, Id);
             System.Console.WriteLine($"Constructing {Id}, {Items} {++_count}");
@@ -48,10 +47,6 @@ namespace Avalonia.Controls.Presenters
         public override Size ArrangeOverride(Size finalSize)
         {
             //            System.Console.WriteLine($"Arrange Realized {_realizedChildren} Info {_currentState}  {finalSize}  {++_overrideCount}");
-            if (Items is GroupingView gv)
-            {
-                VirtualizingPanel.AdjustPosition(new Point(0, -30));
-            }
             foreach (var container in _realizedChildren)
             {
                 var control = container.ContainerControl;
@@ -68,7 +63,7 @@ namespace Avalonia.Controls.Presenters
         /// <inheritdoc/>
         public override void UpdateControls()
         {
-            CreateAndRemoveContainers();
+            CreateContainers();
         }
 
         /// <inheritdoc/>
@@ -95,7 +90,7 @@ namespace Avalonia.Controls.Presenters
             }
         }
 
-        private void CreateAndRemoveContainers()
+        private void CreateContainers()
         {
             var generator = Owner.ItemContainerGenerator;
             if (Owner.Bounds.Size.IsDefault)
