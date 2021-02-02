@@ -71,9 +71,6 @@ namespace Avalonia.Controls.Presenters
                 var vm = gv.GetItemFromScrollpos((int)_scrollViewer.Offset.Y);
                 if (vm != null)
                 {
-                    var relY = VirtualizingPanel.TranslatePoint(new Point(0, 0), _scrollViewer).Value;
-                    var fcv = _scrollViewer.GetVisualChildren();
-                    var fcd = VirtualizingPanel.GetVisualsAt(relY);
                     var firstControl = VirtualizingAverages.GetControlForItem(VirtualizingPanel.TemplatedParent, vm);
                     if ((firstControl?.Parent != null) && (firstControl.Bounds != Rect.Empty))
                     {

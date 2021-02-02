@@ -17,8 +17,6 @@ namespace Avalonia.Controls.Presenters
         private readonly ItemsPresenter _owner;
         private readonly bool _isItemScroll;
         private int _id;
-        public static int _count;
-
 
         public int Count => _generator.Containers.Count();
 
