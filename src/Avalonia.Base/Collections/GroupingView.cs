@@ -55,18 +55,18 @@ namespace Avalonia.Collections
 
         #region IGroupingView
 
-        object IGroupingView.Name => ((IGroupingView)_items).Name;
-        IGroupingView IGroupingView.Items => _items;
-        int IGroupingView.Count => _items.Count;
+        object IGroupingView.Name => ((IGroupingView)_internalItems).Name;
+        IGroupingView IGroupingView.Items => _internalItems;
+        int IGroupingView.Count => _internalItems.Count;
 
-        bool IGroupingView.IsGrouping => ((IGroupingView)_items).IsGrouping;
-        int IGroupingView.TotalItems => ((IGroupingView)_items).TotalItems;
-        int IGroupingView.TotalGroups => ((IGroupingView)_items).TotalGroups;
-        int IGroupingView.ItemScrollStart => ((IGroupingView)_items).ItemScrollStart;
-        int IGroupingView.ItemScrollEnd => ((IGroupingView)_items).ItemScrollEnd;
+        bool IGroupingView.IsGrouping => ((IGroupingView)_internalItems).IsGrouping;
+        int IGroupingView.TotalItems => ((IGroupingView)_internalItems).TotalItems;
+        int IGroupingView.TotalGroups => ((IGroupingView)_internalItems).TotalGroups;
+        int IGroupingView.ItemScrollStart => ((IGroupingView)_internalItems).ItemScrollStart;
+        int IGroupingView.ItemScrollEnd => ((IGroupingView)_internalItems).ItemScrollEnd;
         int IGroupingView.GetItemPosition(int scrollVal)
         {
-            return ((IGroupingView)_items).GetItemPosition(scrollVal);
+            return ((IGroupingView)_internalItems).GetItemPosition(scrollVal);
         }
 
         #endregion
@@ -74,19 +74,19 @@ namespace Avalonia.Collections
         #region Events
         public event NotifyCollectionChangedEventHandler CollectionChanged
         {
-            add { ((INotifyCollectionChanged)_items).CollectionChanged += value; }
-            remove { ((INotifyCollectionChanged)_items).CollectionChanged -= value; }
+            add { ((INotifyCollectionChanged)_internalItems).CollectionChanged += value; }
+            remove { ((INotifyCollectionChanged)_internalItems).CollectionChanged -= value; }
         }
 
         public event PropertyChangedEventHandler PropertyChanged
         {
-            add { ((INotifyPropertyChanged)_items).PropertyChanged += value; }
-            remove { ((INotifyPropertyChanged)_items).PropertyChanged -= value; }
+            add { ((INotifyPropertyChanged)_internalItems).PropertyChanged += value; }
+            remove { ((INotifyPropertyChanged)_internalItems).PropertyChanged -= value; }
         }
         #endregion
 
         #region Private Data
-        private GroupingViewInternal _items;
+        private GroupingViewInternal _internalItems;
         private List<GroupDescription> _groupDescriptions;
         private AvaloniaList<object> _source = new AvaloniaList<object>();
         private int _test = 77;
@@ -110,8 +110,8 @@ namespace Avalonia.Collections
         public GroupingView()
         {
             _groupDescriptions = new List<GroupDescription>();
-            _items = new GroupingViewInternal(_groupDescriptions, "Root", 0);
-            _items.SetItemScrolling(0);
+            _internalItems = new GroupingViewInternal(_groupDescriptions, "Root", 0);
+            _internalItems.SetItemScrolling(0);
         }
 
         #endregion
@@ -119,9 +119,9 @@ namespace Avalonia.Collections
         #region Public Methods
         public void AddGroup(GroupDescription groupPath)
         {
-            _items.ClearFrom(_groupDescriptions.Count - 1);   // -1 due to ItemsGenerator changing to GroupGenerator in the ItemsPresenter
+            _internalItems.ClearFrom(_groupDescriptions.Count - 1);   // -1 due to ItemsGenerator changing to GroupGenerator in the ItemsPresenter
             _groupDescriptions.Add(groupPath);
-            _items.AddRange(Source);
+            _internalItems.AddRange(Source);
         }
 
         public void RemoveGroup(int indx)
@@ -131,16 +131,16 @@ namespace Avalonia.Collections
                 var clearFrom = indx;
                 if (clearFrom == (_groupDescriptions.Count - 1))
                     clearFrom--;  // -1 due to GroupGenerator changing to ItemsGenerator in the ItemsPresenter
-                _items.ClearFrom(clearFrom);
+                _internalItems.ClearFrom(clearFrom);
                 _groupDescriptions.RemoveAt(indx);
-                _items.AddRange(Source);
+                _internalItems.AddRange(Source);
             }
         }
 
         public object GetItemFromScrollpos(int scrollPos)
         {
 //            var gis = new GroupingItemScrolling();
-            return ((GroupingViewInternal)_items).GetItemFromScrollpos(scrollPos);
+            return ((GroupingViewInternal)_internalItems).GetItemFromScrollpos(scrollPos);
         }
         #endregion
 
@@ -152,7 +152,7 @@ namespace Avalonia.Collections
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return ((IEnumerable)_items).GetEnumerator();
+            return ((IEnumerable)_internalItems).GetEnumerator();
         }
         #endregion
 
@@ -168,8 +168,8 @@ namespace Avalonia.Collections
             if (value != null)
             {
                 _source.CollectionChanged += FlatCollectioChanged;
-                _items.AddRange(value);
-                _items.SetItemScrolling(0);
+                _internalItems.AddRange(value);
+                _internalItems.SetItemScrolling(0);
             }
         }
         private void SetGroupDescriptions(List<GroupDescription> value)
@@ -185,17 +185,17 @@ namespace Avalonia.Collections
             switch (e.Action)
             {
                 case NotifyCollectionChangedAction.Add:
-                    _items.AddRange(e.NewItems);
+                    _internalItems.AddRange(e.NewItems);
                     break;
                 case NotifyCollectionChangedAction.Move:
                     break;
                 case NotifyCollectionChangedAction.Remove:
-                    _items.RemoveRange(e.OldItems);
+                    _internalItems.RemoveRange(e.OldItems);
                     break;
                 case NotifyCollectionChangedAction.Replace:
                     break;
                 case NotifyCollectionChangedAction.Reset:
-                    _items.Clear();
+                    _internalItems.Clear();
                     break;
                 default:
                     break;
@@ -205,7 +205,7 @@ namespace Avalonia.Collections
 
         public override string ToString()
         {
-            return $"{((IGroupingView)_items).Name}:{_items.Count} {((IGroupingView)_items).IsGrouping}";
+            return $"{((IGroupingView)_internalItems).Name}:{_internalItems.Count} {((IGroupingView)_internalItems).IsGrouping}";
         }
 
     }

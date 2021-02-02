@@ -130,7 +130,7 @@ namespace Avalonia.Controls.Presenters
         public Vector Offset
         {
             get { return _offset; }
-            set { SetAndRaise(OffsetProperty, ref _offset, ScrollViewer.CoerceOffset(Extent, Viewport, value,true)); }
+            set { SetAndRaise(OffsetProperty, ref _offset, ScrollViewer.CoerceOffset(Extent, Viewport, value, true)); }
         }
 
         /// <summary>
@@ -301,7 +301,7 @@ namespace Avalonia.Controls.Presenters
                 // Do the arrange.
                 //               ArrangeOverrideImpl(size, -Offset * size.Height / Extent.Height);
                 var scale = (size / Extent);
-                var off = new Vector(scale.X*-Offset.X, scale.Y*-Offset.Y);
+                var off = new Vector(scale.X * -Offset.X, scale.Y * -Offset.Y);
                 ArrangeOverrideImpl(size, off);
 
                 // If the anchor moved during the arrange, we need to adjust the offset and do another arrange.
@@ -347,11 +347,14 @@ namespace Avalonia.Controls.Presenters
             {
                 var scroller = Child as ILogicalScrollable;
                 Viewport = scroller.Viewport;
+                Extent = (Child is IScrollable scrollable) ? scrollable.Extent : Child.Bounds.Size;
             }
             else
-            Viewport = finalSize;
-            Extent = (Child is IScrollable scrollable) ? scrollable.Extent.Inflate(Child.Margin) : Child.Bounds.Size.Inflate(Child.Margin);
-//            Extent = Child.Bounds.Size.Inflate(Child.Margin);
+            {
+                Viewport = finalSize;
+                Extent = (Child is IScrollable scrollable) ? scrollable.Extent.Inflate(Child.Margin) : Child.Bounds.Size.Inflate(Child.Margin);
+            }
+            //            Extent = Child.Bounds.Size.Inflate(Child.Margin);
             _isAnchorElementDirty = true;
 
             return finalSize;
@@ -528,7 +531,7 @@ namespace Avalonia.Controls.Presenters
                 Offset = default(Vector);
                 InvalidateMeasure();
             }
-//            else if (scrollable.IsLogicalScrollEnabled)
+            //            else if (scrollable.IsLogicalScrollEnabled)
             {
                 Viewport = scrollable.Viewport;
                 Extent = scrollable.Extent;
