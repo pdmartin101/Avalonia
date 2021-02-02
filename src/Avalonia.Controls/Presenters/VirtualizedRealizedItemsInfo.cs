@@ -10,7 +10,7 @@ namespace Avalonia.Controls.Presenters
 
         internal double _currentOffset;
         public bool Vert { get;}
-        public int Next => _firstInCache + _numInView;
+        public int Next => _firstInCache + _numInCache;
 
         private double _panelOffset;
         private double _hiOffset;
@@ -37,6 +37,8 @@ namespace Avalonia.Controls.Presenters
         {
             _firstInView = first<0?0:first;
             _currentOffset = VirtualizingAverages.GetOffsetForIndex(_templatedParent, _firstInView, items, Vert);
+            _firstInCache = VirtualizingAverages.GetStartIndex(_templatedParent, _currentOffset - _cache.GetBackCacheSize(_tempViewport, _tempAverageItem), items, Vert);
+            _currentOffset = VirtualizingAverages.GetOffsetForIndex(_templatedParent, _firstInCache, items, Vert);
             _numInView = 0;
             _numInCache = 0;
             NumInFullView = 0;

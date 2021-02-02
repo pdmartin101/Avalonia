@@ -13,7 +13,7 @@ namespace Avalonia.Collections
     {
         #region Properties
         public object Name { get; private set; }
-        public int Count => _items.Count;
+        public int Count => _internalItems.Count;
 
         #endregion
 
@@ -23,7 +23,7 @@ namespace Avalonia.Collections
         private int _groupLevel = 0;
         private bool _isGrouping => _groupPaths.Count > _groupLevel;
         private event NotifyCollectionChangedEventHandler _collectionChanged;
-        private AvaloniaList<object> _items { get; set; } = new AvaloniaList<object>();
+        private AvaloniaList<object> _internalItems { get; set; } = new AvaloniaList<object>();
         private int _itemScrollStart;
         private int _itemScrollEnd;
         #endregion
@@ -52,7 +52,7 @@ namespace Avalonia.Collections
             }
             for (int i = 0; i < Count; i++)
             {
-                if (((IGroupingView)_items[i]).ItemScrollEnd >= scrollVal)
+                if (((IGroupingView)_internalItems[i]).ItemScrollEnd >= scrollVal)
                     return i;
             }
             return Count;
@@ -64,8 +64,8 @@ namespace Avalonia.Collections
         {
             var sum = 0;
             if (_isGrouping)
-                foreach (var item in _items)
-                    sum += ((IGroupingView)item).Count;
+                foreach (var item in _internalItems)
+                    sum += ((IGroupingView)item).TotalItems;
             else
                 sum = Count;
             return sum;
@@ -75,10 +75,13 @@ namespace Avalonia.Collections
         {
             var sum = 0;
             if (_isGrouping)
-                foreach (var item in _items)
+            {
+                foreach (var item in _internalItems)
                     sum += ((IGroupingView)item).TotalGroups;
+                sum += _internalItems.Count;
+            }
             else
-                return _groupLevel==0?0:1;
+                return 0;
             return sum;
         }
 
@@ -97,7 +100,7 @@ namespace Avalonia.Collections
         #region Constructor(s)
         public GroupingViewInternal(List<GroupDescription> groupPaths,object groupValue, int level)
         {
-            _items = new AvaloniaList<object>();
+            _internalItems = new AvaloniaList<object>();
             _groupPaths = groupPaths;
             _groupLevel = level;
             Name = groupValue;
@@ -118,7 +121,7 @@ namespace Avalonia.Collections
             }
             else
             {
-                var indx = ((IList)_items).Add(item);
+                var indx = ((IList)_internalItems).Add(item);
                 NotifyAdd(item, indx);
             }
         }
@@ -155,7 +158,7 @@ namespace Avalonia.Collections
             }
             else
             {
-                _items.AddRange(items);
+                _internalItems.AddRange(items);
                 NotifyAddRange((IList)items, indx);
             }
         }
@@ -214,32 +217,32 @@ namespace Avalonia.Collections
 
         private int IndexOf(object item)
         {
-            return ((IList<object>)_items).IndexOf(item);
+            return ((IList<object>)_internalItems).IndexOf(item);
         }
 
         private void RemoveAt(int index)
         {
-            ((IList<object>)_items).RemoveAt(index);
+            ((IList<object>)_internalItems).RemoveAt(index);
         }
 
         internal void Clear()
         {
             if (_isGrouping)
             {
-                foreach (var group in _items)
+                foreach (var group in _internalItems)
                 {
                     ((GroupingViewInternal)group).Clear();
                     _groupIds.Remove(((GroupingViewInternal)group).Name);
                 }
             }
-            _items.Clear();
+            _internalItems.Clear();
             NotifyReset();
         }
         internal void ClearFrom(int level)
         {
             if (_isGrouping)
             {
-                foreach (var group in _items)
+                foreach (var group in _internalItems)
                 {
                     ((GroupingViewInternal)group).ClearFrom(level);
                     if (level <= _groupLevel)
@@ -248,7 +251,7 @@ namespace Avalonia.Collections
             }
             if (level <= _groupLevel)
             {
-                _items.Clear();
+                _internalItems.Clear();
                 NotifyReset();
             }
         }
@@ -258,12 +261,12 @@ namespace Avalonia.Collections
         #region IAvaloniaList<object> Enumerators
         public IEnumerator<object> GetEnumerator()
         {
-            return ((IEnumerable<object>)_items).GetEnumerator();
+            return ((IEnumerable<object>)_internalItems).GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return ((IEnumerable)_items).GetEnumerator();
+            return ((IEnumerable)_internalItems).GetEnumerator();
         }
 
         #endregion
@@ -274,10 +277,11 @@ namespace Avalonia.Collections
             if (_isGrouping)
             {
                 int next = _itemScrollStart;
-                foreach (GroupingViewInternal item in _items)
+                foreach (GroupingViewInternal item in _internalItems)
                 {
                     next = item.SetItemScrolling(next+1);
                 }
+                _itemScrollEnd =next-1;
                 return next;
             }
             _itemScrollEnd = _itemScrollStart + Count-1;
@@ -290,10 +294,10 @@ namespace Avalonia.Collections
             {
                 var pos = scrollPos - ((IGroupingView)this).ItemScrollStart;
 //                gis.GroupPositions.Add(pos);
-                return _items.ElementAt(pos);
+                return _internalItems.ElementAt(pos);
             }
             var count = 0;
-            foreach (IGroupingView item in _items)
+            foreach (IGroupingView item in _internalItems)
             {
                 if (item.ItemScrollEnd >= scrollPos)
                 {
@@ -347,7 +351,7 @@ namespace Avalonia.Collections
             if (!_groupIds.TryGetValue(groupValue, out var groupListItem))
             {
                 groupListItem = new GroupingViewInternal(_groupPaths, groupValue, _groupLevel + 1);
-                indx = ((IList)_items).Add(groupListItem);
+                indx = ((IList)_internalItems).Add(groupListItem);
                 _groupIds.Add(groupValue, groupListItem);
                 newlyCreated = true;
             }
@@ -405,7 +409,7 @@ namespace Avalonia.Collections
              => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         public override string ToString()
         {
-            return $"{Name}:{_items.Count} {((IGroupingView)this).IsGrouping}";
+            return $"{Name}:{_internalItems.Count} {((IGroupingView)this).IsGrouping}";
         }
 
     }
