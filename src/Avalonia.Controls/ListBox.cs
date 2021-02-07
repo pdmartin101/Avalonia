@@ -145,7 +145,7 @@ namespace Avalonia.Controls
         protected override IItemContainerGenerator CreateBranchItemContainerGenerator()
         {
             if ((Items is IGroupingView gvl) && (gvl.IsGrouping))
-                return new GroupContainerGenerator(this, this);
+                return new GroupContainerGenerator(this);
             return base.CreateBranchItemContainerGenerator();
         }
         /// <inheritdoc/>

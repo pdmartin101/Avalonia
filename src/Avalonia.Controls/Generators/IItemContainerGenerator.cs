@@ -9,6 +9,8 @@ namespace Avalonia.Controls.Generators
     /// </summary>
     public interface IItemContainerGenerator
     {
+        int Id { get; set; }
+
         /// <summary>
         /// Gets the currently realized containers.
         /// </summary>

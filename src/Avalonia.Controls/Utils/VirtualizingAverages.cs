@@ -10,11 +10,10 @@ namespace Avalonia.Controls.Utils
     {
         private static Dictionary<ITemplatedControl, VirtualizingSizes> _controls = new Dictionary<ITemplatedControl, VirtualizingSizes>();
 
-        public static bool AddContainerSize(ITemplatedControl templatedControl, object vmItem, IControl control)
+        public static bool AddContainerSize(ITemplatedControl templatedParent, object vmItem, IControl control)
         {
             VirtualizingSizes sizes;
             //            System.Console.WriteLine($"VirtualizingControls:AddContainerSize {item}, {size}");
-            var templatedParent = GetTopTemplatedParent(templatedControl);
             if (!_controls.TryGetValue(templatedParent, out sizes))
             {
                 sizes = new VirtualizingSizes();
@@ -23,10 +22,9 @@ namespace Avalonia.Controls.Utils
             return sizes.AddContainerSize(vmItem, control);
         }
  
-        private static bool GetContainerSize(ITemplatedControl control, object item, out ContainerInfo containerInfo)
+        private static bool GetContainerSize(ITemplatedControl templatedParent, object item, out ContainerInfo containerInfo)
         {
             VirtualizingSizes sizes;
-            var templatedParent = GetTopTemplatedParent(control);
             containerInfo = null;
             if (!_controls.TryGetValue(templatedParent, out sizes))
                 return false;
@@ -34,28 +32,25 @@ namespace Avalonia.Controls.Utils
             return ret;
         }
 
-        public static IControl GetControlForItem(ITemplatedControl control, object item)
+        public static IControl GetControlForItem(ITemplatedControl templatedParent, object item)
         {
-            var templatedParent = GetTopTemplatedParent(control);
             if (!_controls.TryGetValue(templatedParent, out var sizes))
                 return null;
             return sizes.GetControlForItem(item);
         }
 
-        public static Size GetEstimatedExtent(ITemplatedControl control, IEnumerable items, bool vert)
+        public static Size GetEstimatedExtent(ITemplatedControl templatedParent, IEnumerable items, bool vert)
         {
-            var templatedParent = GetTopTemplatedParent(control);
             var av = GetEstimatedAverage(templatedParent, items, vert);
             return vert ? av.WithHeight(av.Height * items.Count()) : av.WithWidth(av.Width * items.Count());
         }
 
-        public static Size GetEstimatedAverage(ITemplatedControl control, IEnumerable items, bool vert)
+        public static Size GetEstimatedAverage(ITemplatedControl templatedParent, IEnumerable items, bool vert)
         {
             var totalKnown = 0.0;
             var largestOther = 0.0;
             var countKnown = 0;
             var countItems = 0;
-            var templatedParent = GetTopTemplatedParent(control);
             foreach (var item in items)
             {
                 countItems++;
@@ -86,16 +81,14 @@ namespace Avalonia.Controls.Utils
             return new Size();
         }
 
-        public static int GetStartIndex(ITemplatedControl control, double offset, IEnumerable items, bool vert)
+        public static int GetStartIndex(ITemplatedControl templatedParent, double offset, IEnumerable items, bool vert)
         {
-            var templatedParent = GetTopTemplatedParent(control);
             if (!_controls.TryGetValue(templatedParent, out var sizes))
                 return 0;
             return sizes.GetStartIndex(offset, items, vert);
         }
-        public static int GetEndIndex(ITemplatedControl control, double startIndx, Size size, IEnumerable items, bool vert)
+        public static int GetEndIndex(ITemplatedControl templatedParent, double startIndx, Size size, IEnumerable items, bool vert)
         {
-            var templatedParent = GetTopTemplatedParent(control);
             if (!_controls.TryGetValue(templatedParent, out var sizes))
                 return 0;
             var offset = 0.0;
@@ -108,20 +101,19 @@ namespace Avalonia.Controls.Utils
             }
             return indx;
         }
-        public static double GetOffsetForIndex(ITemplatedControl control, int indx, IEnumerable items, bool vert)
+        public static double GetOffsetForIndex(ITemplatedControl templatedParent, int indx, IEnumerable items, bool vert)
         {
-            var templatedParent = GetTopTemplatedParent(control);
             if (!_controls.TryGetValue(templatedParent, out var sizes))
                 return 0;
             return sizes.GetOffsetForIndex(indx,items, vert);
         }
-        private static ITemplatedControl GetTopTemplatedParent(ITemplatedControl templatedParent)
-        {
-            var topParent = templatedParent;
-            while (topParent is GroupItem g)
-                topParent = g.TemplatedParent;
-            return topParent;
-        }
+        //private static ITemplatedControl GetTopTemplatedParent(ITemplatedControl templatedParent)
+        //{
+        //    var topParent = templatedParent;
+        //    while (topParent is GroupItem g)
+        //        topParent = g.TemplatedParent;
+        //    return topParent;
+        //}
     }
     public class VirtualizingSizes
     {
@@ -173,7 +165,7 @@ namespace Avalonia.Controls.Utils
             var startIndx = 0;
             foreach (var item in items)
             {
-                if (startIndx == indx)
+                if (startIndx >= indx)
                     break;
                 if (_containers.TryGetValue(item, out var containerInfo))
                     currentPos += vert? containerInfo.ContainerSize.Height: containerInfo.ContainerSize.Width;

@@ -16,6 +16,7 @@ namespace Avalonia.Controls.Presenters
     /// </summary>
     internal abstract class ItemVirtualizer : IVirtualizingController, IDisposable
     {
+        public GroupController GroupControl { get; private set; }
         private double _crossAxisOffset;
         private IDisposable _subscriptions;
         private IDisposable _extentSub;
@@ -32,9 +33,17 @@ namespace Avalonia.Controls.Presenters
         public ItemVirtualizer(ItemsPresenter owner)
         {
             Owner = owner;
+            _scrollViewer = VirtualizingPanel.FindAncestorOfType<ScrollViewer>();
+            if ((owner.TemplatedParent is ItemsControl ic) && !(owner.TemplatedParent is GroupItem))
+                GroupControl = new GroupController() { TemplatedParent = ic, Vert = Vertical, Panel=VirtualizingPanel};
+            else
+            {
+                var presenter = owner.FindAncestorOfType<ItemsPresenter>();
+                GroupControl = presenter.Virtualizer.GroupControl;
+            }
+
             Items = GetItems();
             ItemCount = Items.Count();
-            _scrollViewer = VirtualizingPanel.FindAncestorOfType<ScrollViewer>();
 
             var panel = VirtualizingPanel;
 
@@ -99,7 +108,7 @@ namespace Avalonia.Controls.Presenters
         /// <summary>
         /// Gets the value of the scroll extent.
         /// </summary>
-        public virtual double ExtentValue => Vertical?Owner.DesiredSize.Height: Owner.DesiredSize.Width;  // PDMPDM maybe should be VirtPanel
+        public virtual double ExtentValue => Vertical ? Owner.DesiredSize.Height : Owner.DesiredSize.Width;  // PDMPDM maybe should be VirtPanel
 
         /// <summary>
         /// This property should never be accessed because <see cref="IsLogicalScrollEnabled"/> is
@@ -115,8 +124,8 @@ namespace Avalonia.Controls.Presenters
         private double GetViewPort()
         {
             if (_scrollViewer != null)
-                return Vertical ?_scrollViewer.Viewport.Height:_scrollViewer.Viewport.Width;
-            return Vertical ? Owner.Bounds.Height:Owner.Bounds.Width;
+                return Vertical ? _scrollViewer.Viewport.Height : _scrollViewer.Viewport.Width;
+            return Vertical ? Owner.Bounds.Height : Owner.Bounds.Width;
         }
 
         /// <summary>
@@ -127,7 +136,7 @@ namespace Avalonia.Controls.Presenters
         /// <summary>
         /// Gets the <see cref="ExtentValue"/> as a <see cref="Size"/>.
         /// </summary>
-        public Size Extent=> Vertical ?
+        public Size Extent => Vertical ?
                         new Size(Owner.DesiredSize.Width, ExtentValue) :
                         new Size(ExtentValue, Owner.DesiredSize.Height);
 
@@ -137,7 +146,7 @@ namespace Avalonia.Controls.Presenters
         public Size Viewport => Vertical ?
                         Owner.Bounds.Size.Inflate(Owner.Margin).WithHeight(ViewportValue) :
                         new Size(ViewportValue, Owner.Bounds.Height + Owner.Margin.Top + Owner.Margin.Bottom);
- 
+
         /// <summary>
         /// Gets or sets the <see cref="OffsetValue"/> as a <see cref="Vector"/>.
         /// </summary>
@@ -156,7 +165,7 @@ namespace Avalonia.Controls.Presenters
             {
                 if (!IsLogicalScrollEnabled)
                 {
-                    OffsetValue=Vertical?value.Y:value.X;
+                    OffsetValue = Vertical ? value.Y : value.X;
                 }
 
                 var oldCrossAxisOffset = _crossAxisOffset;
@@ -201,13 +210,11 @@ namespace Avalonia.Controls.Presenters
             }
 
             var virtualizingPanel = owner.Panel as IVirtualizingPanel;
-            var scrollContentPresenter = owner.Parent as IScrollable;
             ItemVirtualizer result = null;
 
-//            if (virtualizingPanel != null && scrollContentPresenter is object)
-              if (virtualizingPanel != null)
-                {
-                    switch (owner.VirtualizationMode)
+            if (virtualizingPanel != null)
+            {
+                switch (owner.VirtualizationMode)
                 {
                     case ItemVirtualizationMode.Simple:
                         result = new ItemVirtualizerSimple(owner);
@@ -331,14 +338,14 @@ namespace Avalonia.Controls.Presenters
 
         private void ExtentChanged(Rect bounds)
         {
-//            System.Console.WriteLine($"Extent from  {_lastExtent}  to {bounds}");
+            //            System.Console.WriteLine($"Extent from  {_lastExtent}  to {bounds}");
             if (_lastExtent != bounds)
                 Owner.InvalidateMeasure();
             _lastExtent = bounds;
         }
         private void ViewportChanged(Rect bounds)
         {
-//            System.Console.WriteLine($"Viewport from  {_lastViewport}  to {bounds}");
+            //            System.Console.WriteLine($"Viewport from  {_lastViewport}  to {bounds}");
             if (_lastViewport != bounds)
                 Owner.InvalidateMeasure();
             _lastViewport = bounds;
