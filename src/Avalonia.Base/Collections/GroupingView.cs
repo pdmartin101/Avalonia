@@ -16,7 +16,7 @@ namespace Avalonia.Collections
         int TotalGroups { get; }
         int ItemScrollStart { get; }
         int ItemScrollEnd { get; }
-        int GetItemPosition(int scrollVal);
+        int GetLocalItemPosition(int scrollVal);
     }
     public class GroupingView : AvaloniaObject, IGroupingView, INotifyCollectionChanged
     {
@@ -64,9 +64,9 @@ namespace Avalonia.Collections
         int IGroupingView.TotalGroups => ((IGroupingView)_internalItems).TotalGroups;
         int IGroupingView.ItemScrollStart => ((IGroupingView)_internalItems).ItemScrollStart;
         int IGroupingView.ItemScrollEnd => ((IGroupingView)_internalItems).ItemScrollEnd;
-        int IGroupingView.GetItemPosition(int scrollVal)
+        int IGroupingView.GetLocalItemPosition(int scrollVal)
         {
-            return ((IGroupingView)_internalItems).GetItemPosition(scrollVal);
+            return ((IGroupingView)_internalItems).GetLocalItemPosition(scrollVal);
         }
 
         #endregion
@@ -111,7 +111,7 @@ namespace Avalonia.Collections
         {
             _groupDescriptions = new List<GroupDescription>();
             _internalItems = new GroupingViewInternal(_groupDescriptions, "Root", 0);
-            _internalItems.SetItemScrolling(0);
+            _internalItems.SetItemScrolling(-1);
         }
 
         #endregion
@@ -137,11 +137,10 @@ namespace Avalonia.Collections
             }
         }
 
-        public object GetItemFromScrollpos(int scrollPos)
-        {
-//            var gis = new GroupingItemScrolling();
-            return ((GroupingViewInternal)_internalItems).GetItemFromScrollpos(scrollPos);
-        }
+        //public object GetItemFromScrollpos(int scrollPos)
+        //{
+        //    return ((GroupingViewInternal)_internalItems).GetItemFromScrollpos(scrollPos);
+        //}
         #endregion
 
         #region IAvaloniaList<object> Enumerators
@@ -169,7 +168,7 @@ namespace Avalonia.Collections
             {
                 _source.CollectionChanged += FlatCollectioChanged;
                 _internalItems.AddRange(value);
-                _internalItems.SetItemScrolling(0);
+                _internalItems.SetItemScrolling(-1);
             }
         }
         private void SetGroupDescriptions(List<GroupDescription> value)

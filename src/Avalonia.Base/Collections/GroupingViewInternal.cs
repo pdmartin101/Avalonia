@@ -42,18 +42,20 @@ namespace Avalonia.Collections
         int IGroupingView.ItemScrollStart => _itemScrollStart;
         int IGroupingView.ItemScrollEnd => _itemScrollEnd;
 
-        int IGroupingView.GetItemPosition(int scrollVal)
+        int IGroupingView.GetLocalItemPosition(int scrollVal)
         {
             if (!_isGrouping)
             {
-                if (scrollVal <=_itemScrollEnd)
-                    return scrollVal-_itemScrollStart;
-                return -1;
+//                if (scrollVal <=_itemScrollEnd)
+                    return scrollVal - _itemScrollStart - 1;
+//                return -1;
             }
             for (int i = 0; i < Count; i++)
             {
                 if (((IGroupingView)_internalItems[i]).ItemScrollEnd >= scrollVal)
+                {
                     return i;
+                }
             }
             return Count;
         }
@@ -276,42 +278,42 @@ namespace Avalonia.Collections
             _itemScrollStart = itemScrollVal;
             if (_isGrouping)
             {
-                int next = _itemScrollStart;
+                int next = _itemScrollStart+1;
                 foreach (GroupingViewInternal item in _internalItems)
                 {
-                    next = item.SetItemScrolling(next+1);
+                    next = item.SetItemScrolling(next);
                 }
                 _itemScrollEnd =next-1;
                 return next;
             }
-            _itemScrollEnd = _itemScrollStart + Count-1;
-            return _itemScrollStart + Count;
+            _itemScrollEnd = _itemScrollStart + Count;
+            return _itemScrollStart + Count+1;
         }
 
-        internal object GetItemFromScrollpos(int scrollPos)
-        {
-            if (!_isGrouping)
-            {
-                var pos = scrollPos - ((IGroupingView)this).ItemScrollStart;
-//                gis.GroupPositions.Add(pos);
-                return _internalItems.ElementAt(pos);
-            }
-            var count = 0;
-            foreach (IGroupingView item in _internalItems)
-            {
-                if (item.ItemScrollEnd >= scrollPos)
-                {
-//                    gis.GroupPositions.Add(count);
-                    if (item.ItemScrollStart > scrollPos)
-                    {
-                        return item;
-                    }
-                    return ((GroupingViewInternal)item).GetItemFromScrollpos(scrollPos);
-                }
-                count++;
-            }
-            throw new NotImplementedException();
-        }
+//        internal object GetItemFromScrollpos(int scrollPos)
+//        {
+//            if (!_isGrouping)
+//            {
+//                var pos = scrollPos - ((IGroupingView)this).ItemScrollStart-1;
+////                gis.GroupPositions.Add(pos);
+//                return _internalItems.ElementAt(pos);
+//            }
+//            var count = 0;
+//            foreach (IGroupingView item in _internalItems)
+//            {
+//                if (item.ItemScrollEnd >= scrollPos)
+//                {
+////                    gis.GroupPositions.Add(count);
+//                    if (item.ItemScrollStart == scrollPos)
+//                    {
+//                        return item;
+//                    }
+//                    return ((GroupingViewInternal)item).GetItemFromScrollpos(scrollPos);
+//                }
+//                count++;
+//            }
+//            throw new NotImplementedException();
+//        }
 
         #region Private Methods
         private void RemoveGroupAndNotify(IGroupingView groupListItem)
@@ -414,4 +416,25 @@ namespace Avalonia.Collections
 
     }
 
+    public class GroupItemInfo
+    {
+        public GroupItemInfo(int scrollPos)
+        {
+            LocalOffset = scrollPos;
+            OverallStart = scrollPos;
+            Length = 1;
+        }
+
+        public GroupItemInfo(int localStart, int itemScrollStart, int itemScrollEnd)
+        {
+            LocalOffset = localStart;
+            OverallStart = itemScrollStart;
+            Length = itemScrollEnd - OverallStart + 1;
+        }
+
+        public int OverallStart { get; set; }
+        public int Length { get; set; } = 1;
+        public int LocalOffset { get; set; }
+
+    }
 }

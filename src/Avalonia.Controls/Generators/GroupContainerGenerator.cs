@@ -11,18 +11,24 @@ namespace Avalonia.Controls.Generators
     /// </summary>
     public class GroupContainerGenerator : ItemContainerGenerator
     {
-        private ItemsControl _overallOwner;
         public static int _gcount = 0;
         /// <summary>
         /// Initializes a new instance of the <see cref="GroupContainerGenerator"/> class.
         /// </summary>
         /// <param name="owner">The immediate owner of the control.</param>
-        /// <param name="overallOwner">The itemscontrol that owns all the groups.</param>
-        public GroupContainerGenerator(IControl owner, ItemsControl overallOwner)
+        /// <param name="groupControl">The GroupController that controls all the groups.</param>
+        //public GroupContainerGenerator(IControl owner, GroupController groupControl)
+        //    : base(owner)
+        //{
+        //    Contract.Requires<ArgumentNullException>(owner != null);
+        //    _groupControl = groupControl;
+        //    _gcount++;
+        //}
+        public GroupContainerGenerator(ItemsControl owner)
             : base(owner)
         {
             Contract.Requires<ArgumentNullException>(owner != null);
-            _overallOwner = overallOwner;
+//            _groupControl = new GroupController() { TemplatedParent = owner };
             _gcount++;
         }
 
@@ -41,8 +47,9 @@ namespace Avalonia.Controls.Generators
                 var itemsControl = Owner as ItemsControl;
                 var presenter = itemsControl.Presenter as ItemsPresenter;
                 var result = new GroupItem(itemsControl);
+                System.Console.WriteLine($"Create GroupItem {result.Id}  from {Id} with {item}");
                 result.SetValue(GroupItem.TemplatedParentProperty, Owner,BindingPriority.TemplatedParent);
-                result.GroupParent = _overallOwner;
+//                result.GroupControl = _groupControl;
                 result.Items = (GroupingViewInternal)item;
                 result.SetValue(GroupItem.ItemsPanelProperty, itemsControl.ItemsPanel);
                 result.ItemTemplate = itemsControl?.ItemTemplate;

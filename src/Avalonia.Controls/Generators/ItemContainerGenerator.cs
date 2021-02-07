@@ -15,6 +15,7 @@ namespace Avalonia.Controls.Generators
         private SortedDictionary<int, ItemContainerInfo> _containers = new SortedDictionary<int, ItemContainerInfo>();
         public static int _count = 0;
 
+        public int Id { get; set; }
         /// <summary>
         /// Initializes a new instance of the <see cref="ItemContainerGenerator"/> class.
         /// </summary>
@@ -24,7 +25,8 @@ namespace Avalonia.Controls.Generators
             Contract.Requires<ArgumentNullException>(owner != null);
 
             Owner = owner;
-            _count++;
+            Id = _count++;
+            System.Console.WriteLine($"Construct ItemContainerGenerator  {Id}");
         }
 
         /// <inheritdoc/>

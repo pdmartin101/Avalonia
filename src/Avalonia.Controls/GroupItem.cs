@@ -7,6 +7,7 @@ using Avalonia.Controls.Presenters;
 using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Styling;
+using Avalonia.VisualTree;
 
 namespace Avalonia.Controls
 {
@@ -18,17 +19,18 @@ namespace Avalonia.Controls
         public int Level { get; set; }
         public ItemVirtualizationMode VirtualizationMode { get; set; } = ItemVirtualizationMode.Smooth;
         public ItemVirtualizingCache VirtualizingCache { get; set; }
-        public ItemsControl GroupParent { get; set; }
+//        public GroupController GroupControl { get; set; }
         public IPanel VirtualizingPanel => Presenter?.Panel;
         public static int _count = 0;
-
+        public int Id;
 
         public GroupItem(ItemsControl itemsControl)
         {
             if (itemsControl is GroupItem gi)
                 Level = gi.Level + 1;
             Name = $"Level{Level,2:00}";
-            _count++;
+            Id = _count++;
+            System.Console.WriteLine($"Construct GroupItem  {Id}");
         }
 
         protected override IItemContainerGenerator CreateItemContainerGenerator()
@@ -40,8 +42,10 @@ namespace Avalonia.Controls
                 ip.SetValue(ItemsPresenter.ItemsPanelProperty, ItemsPanel);   // this can be done with a template binding in style, but this simplifies xaml
             }
             if ((Items is IGroupingView igv) && (igv.IsGrouping))
-                return new GroupContainerGenerator(this, GroupParent);
-            var container = GroupParent.CreateLeafItemContainerGenerator();
+                return new GroupContainerGenerator(this);
+            var ownerPresenter = this.FindAncestorOfType<ItemsPresenter>();
+            var gc = ownerPresenter.Virtualizer.GroupControl;
+            var container = gc.TemplatedParent.CreateLeafItemContainerGenerator();
             return container;
         }
 
@@ -60,7 +64,7 @@ namespace Avalonia.Controls
         //}
         ~GroupItem()
         {
-            System.Console.WriteLine($"Destructing GroupItem, {Items}  {--_count}");
+            System.Console.WriteLine($"Destructing GroupItem, {Items} {Id}  {--_count}");
         }
 
     }
