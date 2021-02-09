@@ -24,7 +24,6 @@ namespace Avalonia.Controls.Presenters
         protected int _numInView;
         protected int _numInCache;
         public int FirstInCache { get; set; }
-        private int _lastInFullView => _firstInView + NumInFullView - 1;
         protected ITemplatedControl _templatedParent;
         protected IEnumerable _items;
         protected double _tempViewport;
@@ -82,7 +81,7 @@ namespace Avalonia.Controls.Presenters
 
         public override string ToString()
         {
-            return $"{_panelOffset}:{_hiOffset}  {_firstInView}:{_lastInView}";
+            return $"{_panelOffset}:{_hiOffset}  {_firstInView}:{_lastInView} {_items}";
         }
     }
 

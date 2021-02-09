@@ -18,7 +18,7 @@ namespace Avalonia.Controls.Presenters
         private readonly ItemsPresenter _owner;
         private GroupController _groupControl;
         private int _id;
-        public RealizedItemsInfo Info { get; set; }
+        public RealizedItemsInfo _info { get; set; }
 
         public int Count => _generator.Containers.Count();
 
@@ -33,9 +33,9 @@ namespace Avalonia.Controls.Presenters
             _cache = owner.VirtualizingCache;
             _groupControl = groupControl;
             if (owner.VirtualizationMode == ItemVirtualizationMode.Logical)
-                Info = new RealizedItemsInfo2(_items, groupControl.Vert, _cache, groupControl.TemplatedParent);
+                _info = new RealizedItemsInfo2(_items, groupControl.Vert, _cache, groupControl.TemplatedParent);
             else
-                Info = new RealizedItemsInfo(_items, groupControl.Vert, _cache, groupControl.TemplatedParent);
+                _info = new RealizedItemsInfo(_items, groupControl.Vert, _cache, groupControl.TemplatedParent);
         }
 
         public IEnumerator<ItemContainerInfo> GetEnumerator()
@@ -47,16 +47,16 @@ namespace Avalonia.Controls.Presenters
         {
 //            _groupControl.RemoveGroup(_items);
             var numItems = _items.Count();
-            Info.SetPanelRelative(-_panel.TranslatePoint(new Point(0, 0), _scrollViewer).Value, _scrollViewer.Bounds.Size);
-            Info.SetFirst(_scrollViewer.Offset);
+            _info.SetPanelRelative(-_panel.TranslatePoint(new Point(0, 0), _scrollViewer).Value, _scrollViewer.Bounds.Size);
+            _info.SetFirst(_scrollViewer.Offset);
             //            System.Console.WriteLine($"BeforeAdd {this} {Info._currentOffset} {Info.PanelOffset}");
-            while (Info.RealizeNeeded(numItems))
+            while (_info.RealizeNeeded(numItems))
             {
-                Info.AddOffset(AddOneChild(Info));
+                _info.AddOffset(AddOneChild(_info));
                 //                System.Console.WriteLine($"Add Item {this} {count} {Info._currentOffset}");
             }
-            System.Console.WriteLine($"AddChildren Realized {this} Info {Info}  Scroller Height {_scrollViewer.Bounds.Height}");
-//            _groupControl.AddGroup(Info, _items, _generator);
+            System.Console.WriteLine($"AddChildren Realized {this} Info {_info}  Scroller Height {_scrollViewer.Bounds.Height}");
+//            _groupControl.AddGroup(_info, _items, _generator);
         }
 
         public void RemoveChildren()
@@ -64,11 +64,11 @@ namespace Avalonia.Controls.Presenters
             var toRemove = new List<ItemContainerInfo>();
             foreach (var item in _generator.Containers)
             {
-                if (Info.CheckForRemoval(item.Index))
+                if (_info.CheckForRemoval(item.Index))
                     toRemove.Add(item);
             }
             if (toRemove.Count != 0)
-                System.Console.WriteLine($"RemoveChildren Realized {this}  Info {Info}  Scroller Height {_scrollViewer.Bounds.Height}");
+                System.Console.WriteLine($"RemoveChildren Realized {this}  Info {_info}  Scroller Height {_scrollViewer.Bounds.Height}");
             foreach (var toRem in toRemove)
             {
                 foreach (var container in _generator.Dematerialize(toRem.Index, 1))
@@ -79,15 +79,15 @@ namespace Avalonia.Controls.Presenters
 
         internal double AddOneChild(RealizedItemsInfo info)
         {
-            var child = _generator.ContainerFromIndex(Info.Next);
+            var child = _generator.ContainerFromIndex(_info.Next);
             if (child == null)
             {
-                var materialized = _generator.Materialize(Info.Next, _items.ElementAt(Info.Next));
+                var materialized = _generator.Materialize(_info.Next, _items.ElementAt(_info.Next));
                 child = materialized.ContainerControl;
                 _panel.Children.Add(child);
                 child.Measure(Size.Infinity);
                 //                System.Console.WriteLine($"Add Item00 {this} {Info._currentOffset}");
-                if (VirtualizingAverages.AddContainerSize(_groupControl.TemplatedParent, _items.ElementAt(Info.Next), child))
+                if (VirtualizingAverages.AddContainerSize(_groupControl.TemplatedParent, _items.ElementAt(_info.Next), child))
                     _owner.InvalidateMeasure();
             }
             else
@@ -96,12 +96,14 @@ namespace Avalonia.Controls.Presenters
                 {
                     gi.Presenter?.InvalidateMeasure();
                 }
+                if (_id==402)
+                { }
                 child.Measure(Size.Infinity);
                 //                System.Console.WriteLine($"Add Item01 {this} {Info._currentOffset}");
-                if (VirtualizingAverages.AddContainerSize(_groupControl.TemplatedParent, _items.ElementAt(Info.Next), child))
+                if (VirtualizingAverages.AddContainerSize(_groupControl.TemplatedParent, _items.ElementAt(_info.Next), child))
                     _owner.InvalidateMeasure();
             }
-            return Info.Vert ? child.DesiredSize.Height : child.DesiredSize.Width;
+            return _info.Vert ? child.DesiredSize.Height : child.DesiredSize.Width;
         }
         public IControl ContainerFromIndex(int indx)
         {
@@ -145,7 +147,7 @@ namespace Avalonia.Controls.Presenters
         }
         internal void RemoveGroup(object vm)
         {
-            //            System.Console.WriteLine($"Rem00 Group {vm}");
+            System.Console.WriteLine($"Rem00 Group {vm}");
             if (!RealizedLookups.TryGetValue(vm, out var lookups))
             {
                 lookups = new RealizedLookup();
@@ -161,7 +163,7 @@ namespace Avalonia.Controls.Presenters
         }
         internal void AddGroup(RealizedItemsInfo info, object vm, IItemContainerGenerator generator)
         {
-            //            System.Console.WriteLine($"Add00 Group {vm} {generator.Id}");
+            System.Console.WriteLine($"Add00 Group {vm} {generator.Id}");
             if (!RealizedLookups.TryGetValue(vm, out var indexList))
             {
                 indexList = new RealizedLookup();
@@ -172,9 +174,13 @@ namespace Avalonia.Controls.Presenters
             {
                 var res = item.ContainerControl.TranslatePoint(new Point(0, 0), Panel);
                 var realizedInfo = new RealizedItemInfo() { Container = item, RelativeOffset = res.Value.Y };
-                if (item.Item is IGroupingView gv)
+                if (item.ContainerControl.Bounds.IsEmpty)
+                    System.Console.WriteLine($"Empty Container {item.Index} {info}");
+
+
+                    if (item.Item is IGroupingView gv)
                 {
-                    //                    System.Console.WriteLine($"Adding GroupItem Group {generator.Id} {item.Item} {gv.ItemScrollStart}");
+                    System.Console.WriteLine($"Adding Group to Groups {generator.Id} {item.Item} {gv.ItemScrollStart}");
                     RealizedIndex.Add(gv.ItemScrollStart, realizedInfo);
                     indexList.Indexes.Add(gv.ItemScrollStart);
                     if (item.Index <= info.NumInFullView)
@@ -183,7 +189,7 @@ namespace Avalonia.Controls.Presenters
                 else
                 {
                     var groupsPos = item.Index + info.ScrollOffset;
-                    //                    System.Console.WriteLine($"Adding ItemItem Group {generator.Id} {item.Item}  {info.ScrollOffset}");
+                    System.Console.WriteLine($"Adding Item to Groups {generator.Id} {item.Item}  {info.ScrollOffset}");
                     RealizedIndex.Add(groupsPos, realizedInfo);
                     indexList.Indexes.Add(groupsPos);
                     if (item.Index < info.NumInFullView)
@@ -198,6 +204,7 @@ namespace Avalonia.Controls.Presenters
                     last = lookup.Value.LastInFullView;
             }
             LastInFullView = last;
+            System.Console.WriteLine($"LastInView {last}");
         }
 
         internal bool GetItemByIndex(int indx, out ItemContainerInfo container)
@@ -226,6 +233,8 @@ namespace Avalonia.Controls.Presenters
                 {
                     offset = item.Value.RelativeOffset - firstLocation;
                     var res = item.Value.Container.ContainerControl.TranslatePoint(new Point(0, 0), Panel);
+                    if (item.Value.Container.ContainerControl.Bounds.IsEmpty)
+                        System.Console.WriteLine($"Empty Container02 {item.Value.Container.Index}");
 
                     if ((offset <= 248.8) && (last < item.Key))// Panel.DesiredSize.Height)
                     {
@@ -236,6 +245,7 @@ namespace Avalonia.Controls.Presenters
                     }
                 }
             }
+            System.Console.WriteLine($"LastInView02 {last}");
             return last + 1 - (int)scrollPos;
         }
         class RealizedLookup
