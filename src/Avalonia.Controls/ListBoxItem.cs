@@ -1,3 +1,4 @@
+using Avalonia.Collections;
 using Avalonia.Controls.Metadata;
 using Avalonia.Controls.Mixins;
 using Avalonia.Input;
@@ -15,11 +16,15 @@ namespace Avalonia.Controls
         /// </summary>
         public static readonly StyledProperty<bool> IsSelectedProperty =
             AvaloniaProperty.Register<ListBoxItem, bool>(nameof(IsSelected));
-        public static int _count = 0;
+        public static int _idCount = 0;
+        public static int _gcount = 0;
+        public int Id;
+        public string str="null";
 
         public ListBoxItem()
         {
-            _count++;
+            Id = _idCount++;
+            PdmLogger.Log(30, PdmLogger.IndentEnum.Nothing, $"Constructing ListBoxItem, {Id}  {++_gcount}");
         }
         /// <summary>
         /// Initializes static members of the <see cref="ListBoxItem"/> class.
@@ -39,9 +44,18 @@ namespace Avalonia.Controls
             get { return GetValue(IsSelectedProperty); }
             set { SetValue(IsSelectedProperty, value); }
         }
+        protected override Size ArrangeOverride(Size finalSize)
+        {
+            str = $"{DataContext}";
+            return base.ArrangeOverride(finalSize);
+        }
+        public override string ToString()
+        {
+            return $"{Id} {str}";
+        }
         ~ListBoxItem()
         {
-            System.Console.WriteLine($"Destructing ListBoxItem,  {--_count}");
+            PdmLogger.Log(31, PdmLogger.IndentEnum.Nothing, $"Destructing ListBoxItem, {Id} {str}  {--_gcount}");
         }
     }
 }

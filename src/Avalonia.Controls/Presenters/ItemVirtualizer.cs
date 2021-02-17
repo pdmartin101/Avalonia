@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Specialized;
 using System.Reactive.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using Avalonia.Collections;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Utils;
 using Avalonia.Input;
@@ -35,7 +36,7 @@ namespace Avalonia.Controls.Presenters
             Owner = owner;
             _scrollViewer = VirtualizingPanel.FindAncestorOfType<ScrollViewer>();
             if ((owner.TemplatedParent is ItemsControl ic) && !(owner.TemplatedParent is GroupItem))
-                GroupControl = new GroupController() { TemplatedParent = ic, Vert = Vertical, Panel=VirtualizingPanel};
+                GroupControl = new GroupController(ic, Vertical);
             else
             {
                 var presenter = owner.FindAncestorOfType<ItemsPresenter>();
@@ -314,7 +315,7 @@ namespace Avalonia.Controls.Presenters
         public virtual void Dispose()
         {
             _scrollViewer = null;
-            System.Console.WriteLine($"Dispose {Items}");
+            PdmLogger.Log(3, PdmLogger.IndentEnum.Nothing,$"Dispose {Items}");
             _subscriptions?.Dispose();
             _subscriptions = null;
             _extentSub?.Dispose();
@@ -327,7 +328,7 @@ namespace Avalonia.Controls.Presenters
                 VirtualizingPanel.Controller = null;
                 VirtualizingPanel.Children.Clear();
             }
-
+            GroupControl.RemoveItems(Owner.ItemContainerGenerator);
             Owner.ItemContainerGenerator.Clear();
         }
 
@@ -338,21 +339,23 @@ namespace Avalonia.Controls.Presenters
 
         private void ExtentChanged(Rect bounds)
         {
-            //            System.Console.WriteLine($"Extent from  {_lastExtent}  to {bounds}");
-            if (_lastExtent != bounds)
+            PdmLogger.Log(2, PdmLogger.IndentEnum.Nothing, $"Extent from  {_lastExtent}  to {bounds}");
+            if ((Vertical && (_lastExtent.Top != bounds.Top) || (_lastExtent.Height != bounds.Height)) ||
+                (!Vertical && (_lastExtent.Left != bounds.Left) || (_lastExtent.Width != bounds.Width)))
                 Owner.InvalidateMeasure();
             _lastExtent = bounds;
         }
         private void ViewportChanged(Rect bounds)
         {
-            //            System.Console.WriteLine($"Viewport from  {_lastViewport}  to {bounds}");
-            if (_lastViewport != bounds)
+            PdmLogger.Log(2, PdmLogger.IndentEnum.Nothing, $"Viewport from  {_lastViewport}  to {bounds}");
+            if ((Vertical && (_lastViewport.Top != bounds.Top) || (_lastViewport.Height != bounds.Height)) ||
+                (!Vertical && (_lastViewport.Left != bounds.Left) || (_lastViewport.Width != bounds.Width)))
                 Owner.InvalidateMeasure();
             _lastViewport = bounds;
         }
         private void VirtChanged(Rect bounds)
         {
-            System.Console.WriteLine($"Virt from  {_lastVirt}  to {bounds}");
+            PdmLogger.Log(2, PdmLogger.IndentEnum.Nothing, $"Virt from  {_lastVirt}  to {bounds}");
             if (_lastVirt != bounds)
                 Owner.InvalidateMeasure();
             _lastVirt = bounds;

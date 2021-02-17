@@ -101,7 +101,7 @@ namespace Avalonia.Controls
             _availableSpace = finalSize;
             if ((Controller is ItemVirtualizerSmooth) || (Controller is ItemVirtualizerLogical))
             {
-                Controller?.UpdateControls();
+ //               Controller?.UpdateControls();
                 return finalSize;
             }
             _canBeRemoved = 0;

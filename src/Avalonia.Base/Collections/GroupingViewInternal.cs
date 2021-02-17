@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices.ComTypes;
 
 namespace Avalonia.Collections
 {
@@ -436,5 +437,30 @@ namespace Avalonia.Collections
         public int Length { get; set; } = 1;
         public int LocalOffset { get; set; }
 
+    }
+
+    public static class  PdmLogger
+    {
+        public enum IndentEnum { Nothing, In,Out}
+        private static int _indented = 0;
+        public static void Log(int id, IndentEnum tab,string str)
+        {
+            if (id < 0)
+                return;
+            if ((tab== IndentEnum.In) && _indented==0)
+            {
+                System.Console.WriteLine();
+                System.Console.WriteLine();
+            }
+            if (tab == IndentEnum.Out)
+                _indented--;
+            for (int i = 0; i < _indented; i++)
+            {
+                System.Console.Write("    ");
+            }
+            System.Console.WriteLine(str);
+            if (tab == IndentEnum.In)
+                _indented++;
+        }
     }
 }

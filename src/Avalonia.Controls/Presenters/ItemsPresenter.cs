@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Specialized;
+using Avalonia.Collections;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using static Avalonia.Utilities.MathUtilities;
@@ -27,7 +28,9 @@ namespace Avalonia.Controls.Presenters
         private bool _canHorizontallyScroll;
         private bool _canVerticallyScroll;
         private EventHandler _scrollInvalidated;
-        public static int _count = 0;
+        public static int _gcount = 0;
+        public static int _idCount = 0;
+        public int Id;
 
         /// <summary>
         /// Initializes static members of the <see cref="ItemsPresenter"/> class.
@@ -44,7 +47,8 @@ namespace Avalonia.Controls.Presenters
 
         public ItemsPresenter()
         {
-            _count++;
+            Id = _idCount++;
+            PdmLogger.Log(30, PdmLogger.IndentEnum.Nothing, $"Constructing ItemsPresenter, {Id} {Items} {++_gcount}");
         }
         /// <summary>
         /// Gets or sets the virtualization mode for the items.
@@ -202,7 +206,7 @@ namespace Avalonia.Controls.Presenters
 
         ~ItemsPresenter()
         {
-            System.Console.WriteLine($"Destructing ItemsPresenter, {Items} {--_count}");
+            PdmLogger.Log(31, PdmLogger.IndentEnum.Nothing, $"Destructing ItemsPresenter, {Id} {Items} {--_gcount}");
         }
     }
 }

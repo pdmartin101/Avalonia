@@ -18,7 +18,7 @@ namespace Avalonia.Controls.Presenters
         private bool _estimated;
         private Size _estimatedSize;
         public static int _idCount = 300;
-        public static int _count = 0;
+        public static int _gcount = 0;
         private static int _measureCount;
         private static int _overrideCount;
         public ItemVirtualizerSmooth(ItemsPresenter owner)
@@ -26,17 +26,17 @@ namespace Avalonia.Controls.Presenters
         {
             Id = _idCount++;
             _realizedChildren = new RealizedItems(Owner,GroupControl, Id);
-            System.Console.WriteLine($"Constructing {Id}, {Items} {++_count}");
+            PdmLogger.Log(30, PdmLogger.IndentEnum.Nothing, $"Constructing {Id}, {Items} {++_gcount}");
         }
 
         /// <inheritdoc/>
         public override Size MeasureOverride(Size availableSize)
         {
-            //            System.Console.WriteLine($"Measure Realized {_realizedChildren} Info {_currentState} {availableSize}  {++_measureCount}");
+            PdmLogger.Log(0, PdmLogger.IndentEnum.In, $"Measure Realized {_realizedChildren}  {availableSize}  {++_measureCount}  {!Owner.Bounds.Size.IsDefault}");
             UpdateControls();
-            if (!Owner.Bounds.Size.IsDefault)
+            if (!_scrollViewer.Bounds.Size.IsDefault)
                 _realizedChildren.RemoveChildren();
-            //            System.Console.WriteLine($"Measured Realized {_realizedChildren} Info {_currentState} {_estimatedSize}  {_measureCount}");
+            PdmLogger.Log(1, PdmLogger.IndentEnum.Out, $"Measured Realized {_realizedChildren}  {_estimatedSize}  {_measureCount}  {!Owner.Bounds.Size.IsDefault}");
             if (VirtualizingPanel.ScrollDirection == Layout.Orientation.Vertical)
                 return _estimatedSize;
             return _estimatedSize;
@@ -44,7 +44,7 @@ namespace Avalonia.Controls.Presenters
 
         public override Size ArrangeOverride(Size finalSize)
         {
-            //            System.Console.WriteLine($"Arrange Realized {_realizedChildren} Info {_currentState}  {finalSize}  {++_overrideCount}");
+            PdmLogger.Log(0, PdmLogger.IndentEnum.In, $"Arrange Realized {_realizedChildren}  {finalSize}  {++_overrideCount}  {Owner.Bounds}");
             foreach (var container in _realizedChildren)
             {
                 var control = container.ContainerControl;
@@ -55,6 +55,7 @@ namespace Avalonia.Controls.Presenters
                     control.Arrange(new Rect(new Point(startOffset, 0), new Size(control.DesiredSize.Width, finalSize.Height)));
             }
             Owner.Panel.Arrange(new Rect(finalSize));
+            PdmLogger.Log(1, PdmLogger.IndentEnum.Out, $"Arranged Realized {_realizedChildren}  {finalSize}  {_overrideCount}  {Owner.Bounds}");
             return finalSize;
         }
 
@@ -67,7 +68,7 @@ namespace Avalonia.Controls.Presenters
         /// <inheritdoc/>
         public override void ItemsChanged(IEnumerable items, NotifyCollectionChangedEventArgs e)
         {
-            System.Console.WriteLine($"ItemsChanged {Id} Current Items {Items}   New Items {items} ");
+            PdmLogger.Log(2, PdmLogger.IndentEnum.Nothing, $"ItemsChanged {Id} Current Items {Items}   New Items {items} ");
             base.ItemsChanged(items, e);
             if (e.Action != NotifyCollectionChangedAction.Add)
                 ItemContainerSync.ItemsChanged(Owner, null, e);
@@ -95,6 +96,7 @@ namespace Avalonia.Controls.Presenters
             {
                 if ((Items.Count() > 0) && !_estimated)
                 {
+                    PdmLogger.Log(0, PdmLogger.IndentEnum.In, $"Estimate {Id} Items:{Items} ");
                     var materialized = generator.Materialize(0, Items.ElementAt(0));
                     VirtualizingPanel.Children.Insert(0, materialized.ContainerControl);
                     materialized.ContainerControl.Measure(Size.Infinity);
@@ -103,7 +105,7 @@ namespace Avalonia.Controls.Presenters
                     //generator.Dematerialize(0, 1);
                     //ItemsPresenter.InvalidateMeasure();
                     _estimated = true;
-                    System.Console.WriteLine($"Estimate {Id} Items:{Items} ");
+                    PdmLogger.Log(1, PdmLogger.IndentEnum.Out, $"Estimated {Id} Items:{Items} ");
                 }
             }
             else if (Items != null && VirtualizingPanel.IsAttachedToVisualTree)
@@ -120,7 +122,7 @@ namespace Avalonia.Controls.Presenters
 
         ~ItemVirtualizerSmooth()
         {
-            System.Console.WriteLine($"Destructing {Id}, {Items} {--_count}");
+            PdmLogger.Log(31, PdmLogger.IndentEnum.Nothing, $"Destructing Smooth {Id}, {Items} {--_gcount}");
         }
     }
 

@@ -21,16 +21,18 @@ namespace Avalonia.Controls
         public ItemVirtualizingCache VirtualizingCache { get; set; }
 //        public GroupController GroupControl { get; set; }
         public IPanel VirtualizingPanel => Presenter?.Panel;
-        public static int _count = 0;
+        public static int _idCount = 0;
+        public static int _gcount = 0;
         public int Id;
 
-        public GroupItem(ItemsControl itemsControl)
+        public GroupItem(ItemsControl itemsControl, IGroupingView items)
         {
             if (itemsControl is GroupItem gi)
                 Level = gi.Level + 1;
             Name = $"Level{Level,2:00}";
-            Id = _count++;
-            System.Console.WriteLine($"Construct GroupItem  {Id}");
+            Id = _idCount++;
+            Items = items;
+            PdmLogger.Log(30, PdmLogger.IndentEnum.Nothing, $"Construct GroupItem   {Id} {Items} {++_gcount}");
         }
 
         protected override IItemContainerGenerator CreateItemContainerGenerator()
@@ -51,7 +53,6 @@ namespace Avalonia.Controls
 
         //protected override Size MeasureOverride(Size availableSize)
         //{
-        //    //System.Console.WriteLine($"PresenterInvalidate");
         //    //Presenter.InvalidateMeasure();
         //    return base.MeasureOverride(availableSize);
         //}
@@ -62,9 +63,14 @@ namespace Avalonia.Controls
         //    PressedMixin.Attach<GroupItem>();
         //    FocusableProperty.OverrideDefaultValue<GroupItem>(true);
         //}
+
+        public override string ToString()
+        {
+            return $"{Id} {Items}";
+        }
         ~GroupItem()
         {
-            System.Console.WriteLine($"Destructing GroupItem, {Items} {Id}  {--_count}");
+            PdmLogger.Log(31, PdmLogger.IndentEnum.Nothing, $"Destructing GroupItem,  {Id} {Items} {--_gcount}");
         }
 
     }
