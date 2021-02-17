@@ -1,5 +1,6 @@
 using System;
 using System.Reactive.Linq;
+using Avalonia.Collections;
 using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
@@ -261,6 +262,7 @@ namespace Avalonia.Controls
             {
                 if (SetAndRaise(OffsetProperty, ref _offset, CoerceOffset(Extent, Viewport, value,false)))
                 {
+                    PdmLogger.Log(0,PdmLogger.IndentEnum.Nothing, $"Scroll {value}");
                     CalculatedPropertiesChanged();
                 }
             }

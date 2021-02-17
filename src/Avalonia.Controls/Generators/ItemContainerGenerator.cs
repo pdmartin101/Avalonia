@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Avalonia.Collections;
 using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Templates;
 using Avalonia.Data;
@@ -14,8 +15,11 @@ namespace Avalonia.Controls.Generators
     {
         private SortedDictionary<int, ItemContainerInfo> _containers = new SortedDictionary<int, ItemContainerInfo>();
         public static int _count = 0;
+        public static int _gcount = 0;
 
         public int Id { get; set; }
+
+        protected string _str="null";
         /// <summary>
         /// Initializes a new instance of the <see cref="ItemContainerGenerator"/> class.
         /// </summary>
@@ -26,7 +30,9 @@ namespace Avalonia.Controls.Generators
 
             Owner = owner;
             Id = _count++;
-            System.Console.WriteLine($"Construct ItemContainerGenerator  {Id}");
+            if (Owner is ItemsControl ic)
+                _str = $"{ic.Items}";
+            PdmLogger.Log(30, PdmLogger.IndentEnum.Nothing, $"Construct ItemContainerGenerator  {Id} {_str}  {++_gcount}");
         }
 
         /// <inheritdoc/>
@@ -244,7 +250,7 @@ namespace Avalonia.Controls.Generators
 
         ~ItemContainerGenerator()
         {
-            System.Console.WriteLine($"Destructing ItemContainerGenerator,  {--_count}");
+            PdmLogger.Log(31, PdmLogger.IndentEnum.Nothing, $"Destructing ItemContainerGenerator, {Id}  {_str}  {--_gcount}");
         }
     }
 }

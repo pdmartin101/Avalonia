@@ -40,7 +40,7 @@ namespace Avalonia.Controls
 
         public double GetBackCacheSize(double viewPort, double item)
         {
-            return 100;
+            return 0;
             switch (CacheLengthUnit)
             {
                 case CacheLengthUnitEnum.Page:
@@ -54,7 +54,7 @@ namespace Avalonia.Controls
         }
         public double GetFwdCacheSize(double viewPort, double item)
         {
-            return 50;
+            return 0;
             switch (CacheLengthUnit)
             {
                 case CacheLengthUnitEnum.Page:

@@ -281,7 +281,7 @@ namespace Avalonia
         /// <returns>The string representation of the size.</returns>
         public override string ToString()
         {
-            return string.Format(CultureInfo.InvariantCulture, "{0}, {1}", _width, _height);
+            return string.Format(CultureInfo.InvariantCulture, "{0:0.##},{1:0.##}", _width, _height);
         }
 
         /// <summary>

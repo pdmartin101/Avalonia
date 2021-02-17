@@ -11,25 +11,17 @@ namespace Avalonia.Controls.Generators
     /// </summary>
     public class GroupContainerGenerator : ItemContainerGenerator
     {
-        public static int _gcount = 0;
+        public static int _gcount00 = 0;
         /// <summary>
         /// Initializes a new instance of the <see cref="GroupContainerGenerator"/> class.
         /// </summary>
         /// <param name="owner">The immediate owner of the control.</param>
-        /// <param name="groupControl">The GroupController that controls all the groups.</param>
-        //public GroupContainerGenerator(IControl owner, GroupController groupControl)
-        //    : base(owner)
-        //{
-        //    Contract.Requires<ArgumentNullException>(owner != null);
-        //    _groupControl = groupControl;
-        //    _gcount++;
-        //}
         public GroupContainerGenerator(ItemsControl owner)
             : base(owner)
         {
             Contract.Requires<ArgumentNullException>(owner != null);
-//            _groupControl = new GroupController() { TemplatedParent = owner };
-            _gcount++;
+            //            _groupControl = new GroupController() { TemplatedParent = owner };
+            PdmLogger.Log(30, PdmLogger.IndentEnum.Nothing, $"Construct GroupContainerGenerator  {Id} {_str}  {++_gcount00}");
         }
 
         /// <inheritdoc/>
@@ -46,11 +38,10 @@ namespace Avalonia.Controls.Generators
             {
                 var itemsControl = Owner as ItemsControl;
                 var presenter = itemsControl.Presenter as ItemsPresenter;
-                var result = new GroupItem(itemsControl);
-                System.Console.WriteLine($"Create GroupItem {result.Id}  from {Id} with {item}");
+                var result = new GroupItem(itemsControl, (GroupingViewInternal)item);
+                PdmLogger.Log(4, PdmLogger.IndentEnum.Nothing, $"Create GroupItem {result.Id}  from {Id} with {item}");
                 result.SetValue(GroupItem.TemplatedParentProperty, Owner,BindingPriority.TemplatedParent);
 //                result.GroupControl = _groupControl;
-                result.Items = (GroupingViewInternal)item;
                 result.SetValue(GroupItem.ItemsPanelProperty, itemsControl.ItemsPanel);
                 result.ItemTemplate = itemsControl?.ItemTemplate;
                 if (presenter != null)
@@ -113,7 +104,7 @@ namespace Avalonia.Controls.Generators
 
         ~GroupContainerGenerator()
         {
-            System.Console.WriteLine($"Destructing GroupContainerGenerator,  {--_gcount}");
+            PdmLogger.Log(31, PdmLogger.IndentEnum.Nothing, $"Destructing GroupContainerGenerator,  {Id}  {_str}  {--_gcount00}");
         }
 
     }

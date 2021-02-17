@@ -81,7 +81,7 @@ namespace Avalonia.Controls.Presenters
 
         public override string ToString()
         {
-            return $"{_panelOffset}:{_hiOffset}  {_firstInView}:{_lastInView} {_items}";
+            return $"{_panelOffset:0.00}:{_hiOffset:0.00}  {_firstInView}:{_lastInView} {_items}";
         }
     }
 

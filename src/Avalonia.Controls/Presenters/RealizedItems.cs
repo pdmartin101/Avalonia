@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Collections;
@@ -33,9 +34,9 @@ namespace Avalonia.Controls.Presenters
             _cache = owner.VirtualizingCache;
             _groupControl = groupControl;
             if (owner.VirtualizationMode == ItemVirtualizationMode.Logical)
-                _info = new RealizedItemsInfo2(_items, groupControl.Vert, _cache, groupControl.TemplatedParent);
+                _info = new RealizedItemsInfo2(_items, groupControl.Vertical, _cache, groupControl.TemplatedParent);
             else
-                _info = new RealizedItemsInfo(_items, groupControl.Vert, _cache, groupControl.TemplatedParent);
+                _info = new RealizedItemsInfo(_items, groupControl.Vertical, _cache, groupControl.TemplatedParent);
         }
 
         public IEnumerator<ItemContainerInfo> GetEnumerator()
@@ -45,18 +46,18 @@ namespace Avalonia.Controls.Presenters
 
         public void AddChildren()
         {
-//            _groupControl.RemoveGroup(_items);
+            //            _groupControl.RemoveGroup(_items);
             var numItems = _items.Count();
             _info.SetPanelRelative(-_panel.TranslatePoint(new Point(0, 0), _scrollViewer).Value, _scrollViewer.Bounds.Size);
             _info.SetFirst(_scrollViewer.Offset);
-            //            System.Console.WriteLine($"BeforeAdd {this} {Info._currentOffset} {Info.PanelOffset}");
+            PdmLogger.Log(3, PdmLogger.IndentEnum.Nothing, $"BeforeAdd {this} {_info}");
             while (_info.RealizeNeeded(numItems))
             {
                 _info.AddOffset(AddOneChild(_info));
-                //                System.Console.WriteLine($"Add Item {this} {count} {Info._currentOffset}");
+                PdmLogger.Log(3, PdmLogger.IndentEnum.Nothing, $"Add Item {this} {_info}");
             }
-            System.Console.WriteLine($"AddChildren Realized {this} Info {_info}  Scroller Height {_scrollViewer.Bounds.Height}");
-//            _groupControl.AddGroup(_info, _items, _generator);
+            PdmLogger.Log(2, PdmLogger.IndentEnum.Nothing, $"AddChildren Realized {this} Info {_info}  Scroller Height {_scrollViewer.Bounds.Height:0.00}");
+            //            _groupControl.AddGroup(_info, _items, _generator);
         }
 
         public void RemoveChildren()
@@ -68,11 +69,15 @@ namespace Avalonia.Controls.Presenters
                     toRemove.Add(item);
             }
             if (toRemove.Count != 0)
-                System.Console.WriteLine($"RemoveChildren Realized {this}  Info {_info}  Scroller Height {_scrollViewer.Bounds.Height}");
+                PdmLogger.Log(30, PdmLogger.IndentEnum.Nothing, $"RemoveChildren {this}  Info {_info} {toRemove.Count}");
             foreach (var toRem in toRemove)
             {
                 foreach (var container in _generator.Dematerialize(toRem.Index, 1))
+                {
+                    PdmLogger.Log(30, PdmLogger.IndentEnum.Nothing, $"Remove Child {container.ContainerControl}");
                     _panel.Children.Remove(container.ContainerControl);
+                    _groupControl.RemoveItem(container.ContainerControl);
+                }
                 //                _groupControl.RemoveGroup(toRem.Item);
             }
         }
@@ -86,7 +91,7 @@ namespace Avalonia.Controls.Presenters
                 child = materialized.ContainerControl;
                 _panel.Children.Add(child);
                 child.Measure(Size.Infinity);
-                //                System.Console.WriteLine($"Add Item00 {this} {Info._currentOffset}");
+                PdmLogger.Log(2, PdmLogger.IndentEnum.Nothing, $"Add new Item {child.DataContext} to {this} {_info._currentOffset:0.00}");
                 if (VirtualizingAverages.AddContainerSize(_groupControl.TemplatedParent, _items.ElementAt(_info.Next), child))
                     _owner.InvalidateMeasure();
             }
@@ -96,10 +101,10 @@ namespace Avalonia.Controls.Presenters
                 {
                     gi.Presenter?.InvalidateMeasure();
                 }
-                if (_id==402)
+                if (_id == 402)
                 { }
                 child.Measure(Size.Infinity);
-                //                System.Console.WriteLine($"Add Item01 {this} {Info._currentOffset}");
+                PdmLogger.Log(2, PdmLogger.IndentEnum.Nothing, $"Add old Item {child.DataContext} to {this} {_info._currentOffset:0.00}");
                 if (VirtualizingAverages.AddContainerSize(_groupControl.TemplatedParent, _items.ElementAt(_info.Next), child))
                     _owner.InvalidateMeasure();
             }
@@ -126,85 +131,93 @@ namespace Avalonia.Controls.Presenters
     }
     public class GroupController
     {
-        public ItemsControl TemplatedParent { get; set; }
-        public IControl Panel { get; set; }
-        public int LastInFullView { get; set; }
-        public IGroupingView AllItems { get; set; }
-        public bool Vert { get; set; }
-        //        public int NumInView { get; set; }
+        public ItemsControl TemplatedParent { get; private set; }
+        private ScrollContentPresenter _scrollContentPresenter;
+        private IControl _panel;
+        public int NumInFullView { get; private set; }
+        public bool Vertical { get; private set; }
         private Dictionary<int, RealizedItemInfo> RealizedIndex { get; set; } = new Dictionary<int, RealizedItemInfo>();
-        private Dictionary<object, RealizedLookup> RealizedLookups { get; set; } = new Dictionary<object, RealizedLookup>();
-        private int _oldLastInFullView = -1;
 
-        internal bool Changed()
+        public GroupController(ItemsControl itemsControl, bool vert)
         {
-            if (LastInFullView != _oldLastInFullView)
-            {
-                _oldLastInFullView = LastInFullView;
-                return true;
-            }
-            return false;
+            TemplatedParent = itemsControl;
+            Vertical = vert;
+            _scrollContentPresenter = itemsControl.FindDescendantOfType<ScrollContentPresenter>();
+            _panel = itemsControl.FindDescendantOfType<IVirtualizingPanel>();
         }
-        internal void RemoveGroup(object vm)
+        private void RemoveOld()
         {
-            System.Console.WriteLine($"Rem00 Group {vm}");
-            if (!RealizedLookups.TryGetValue(vm, out var lookups))
+//            PdmLogger.Log(3, PdmLogger.IndentEnum.Nothing, $"Rem Group");
+            var toRemove = new List<int>();
+            foreach (var item in RealizedIndex)
             {
-                lookups = new RealizedLookup();
-                RealizedLookups.Add(vm, lookups);
-                //                System.Console.WriteLine($"Rem01 Group {vm}");
+                if ((item.Value.Container == null) || (item.Value.Container.ContainerControl.Parent == null))
+                    toRemove.Add(item.Key);
             }
-            foreach (var item in lookups.Indexes)
+            foreach (var item in toRemove)
             {
+                PdmLogger.Log(3, PdmLogger.IndentEnum.Nothing, $"Rem Item02 {RealizedIndex[item].Container.ContainerControl.DataContext}");
+
                 RealizedIndex.Remove(item);
             }
-            lookups.Indexes.Clear();
-            lookups.LastInFullView = -1;
         }
-        internal void AddGroup(RealizedItemsInfo info, object vm, IItemContainerGenerator generator)
+        public void RemoveItem(IControl control)
         {
-            System.Console.WriteLine($"Add00 Group {vm} {generator.Id}");
-            if (!RealizedLookups.TryGetValue(vm, out var indexList))
+            PdmLogger.Log(3, PdmLogger.IndentEnum.Nothing, $"Rem Item");
+            var toRemove = new List<int>();
+            foreach (var item in RealizedIndex)
             {
-                indexList = new RealizedLookup();
-                RealizedLookups.Add(vm, indexList);
-                //                System.Console.WriteLine($"Add01 Group {vm} {generator.Id}");
+                if (item.Value.Container.ContainerControl == control)
+                    toRemove.Add(item.Key);
             }
+            foreach (var item in toRemove)
+            {
+                PdmLogger.Log(3, PdmLogger.IndentEnum.Nothing, $"Rem Item00 {RealizedIndex[item].Container.ContainerControl.DataContext}");
+
+                RealizedIndex.Remove(item);
+            }
+        }
+       
+        internal void RemoveItems(IItemContainerGenerator itemContainerGenerator)
+        {
+            var toRemove = new List<int>();
+            foreach (var container in itemContainerGenerator.Containers)
+            {
+                foreach (var item in RealizedIndex)
+                {
+                    if (item.Value.Container == container)
+                        toRemove.Add(item.Key);
+                }
+            }
+            foreach (var item in toRemove)
+            {
+                PdmLogger.Log(3, PdmLogger.IndentEnum.Nothing, $"Rem Item01 {RealizedIndex[item].Container.ContainerControl.DataContext}");
+
+                RealizedIndex.Remove(item);
+            }
+        }
+
+        internal void AddGroup(RealizedItemsInfo info, object vm, IItemContainerGenerator generator, int scrollPos)
+        {
+            var previousNumInfullView = NumInFullView;
+            RemoveOld();
             foreach (var item in generator.Containers)
             {
-                var res = item.ContainerControl.TranslatePoint(new Point(0, 0), Panel);
-                var realizedInfo = new RealizedItemInfo() { Container = item, RelativeOffset = res.Value.Y };
-                if (item.ContainerControl.Bounds.IsEmpty)
-                    System.Console.WriteLine($"Empty Container {item.Index} {info}");
-
-
-                    if (item.Item is IGroupingView gv)
+                var res = item.ContainerControl.TranslatePoint(new Point(0, 0), _panel);
+                var itemPos = (item.Item is IGroupingView gv) ? gv.ItemScrollStart : item.Index + info.ScrollOffset;
+                if (!RealizedIndex.TryGetValue(itemPos, out var realizedInfo))
                 {
-                    System.Console.WriteLine($"Adding Group to Groups {generator.Id} {item.Item} {gv.ItemScrollStart}");
-                    RealizedIndex.Add(gv.ItemScrollStart, realizedInfo);
-                    indexList.Indexes.Add(gv.ItemScrollStart);
-                    if (item.Index <= info.NumInFullView)
-                        indexList.LastInFullView = gv.ItemScrollStart;
+                    realizedInfo = new RealizedItemInfo();
+                    RealizedIndex.Add(itemPos, realizedInfo);
                 }
-                else
-                {
-                    var groupsPos = item.Index + info.ScrollOffset;
-                    System.Console.WriteLine($"Adding Item to Groups {generator.Id} {item.Item}  {info.ScrollOffset}");
-                    RealizedIndex.Add(groupsPos, realizedInfo);
-                    indexList.Indexes.Add(groupsPos);
-                    if (item.Index < info.NumInFullView)
-                        indexList.LastInFullView = groupsPos;
-                    //                   startDelta++;
-                }
+                realizedInfo.Set(item);
+                realizedInfo.RelativeOffset = res.Value.Y;
             }
-            var last = -1;
-            foreach (var lookup in RealizedLookups)
-            {
-                if (lookup.Value.LastInFullView > last)
-                    last = lookup.Value.LastInFullView;
-            }
-            LastInFullView = last;
-            System.Console.WriteLine($"LastInView {last}");
+            NumInFullView = GetNumInView(scrollPos);
+            if (NumInFullView == 8)
+            { }
+            if (previousNumInfullView != NumInFullView)
+                _scrollContentPresenter.InvalidateArrange();
         }
 
         internal bool GetItemByIndex(int indx, out ItemContainerInfo container)
@@ -219,46 +232,53 @@ namespace Avalonia.Controls.Presenters
             return false;
         }
 
-        public int GetNumInView(double scrollPos)
+        private int GetNumInView(double scrollPos)
         {
             var last = (int)scrollPos;
-            var offset = 0.0;
+            RemoveOld();
             if (RealizedIndex.TryGetValue((int)scrollPos, out var first))
             {
                 var firstLocation = first.RelativeOffset;
-                //               var res = first.ContainerControl.TranslatePoint(new Point(0, 0), Panel);
-                //               while ((indx < RealizedIndex.Count) && (offset <= 248.8)) //Panel.DesiredSize.Height))
                 foreach (var item in RealizedIndex)
-                //                    if (RealizedIndex.TryGetValue(indx, out var item))
                 {
-                    offset = item.Value.RelativeOffset - firstLocation;
-                    var res = item.Value.Container.ContainerControl.TranslatePoint(new Point(0, 0), Panel);
-                    if (item.Value.Container.ContainerControl.Bounds.IsEmpty)
-                        System.Console.WriteLine($"Empty Container02 {item.Value.Container.Index}");
-
-                    if ((offset <= 248.8) && (last < item.Key))// Panel.DesiredSize.Height)
+                    var offset = item.Value.RelativeOffset - firstLocation;
+                    var res = item.Value.Container.ContainerControl.TranslatePoint(new Point(0, 0), _panel);
+                    if ((offset <= _scrollContentPresenter.DesiredSize.Height) && (last < item.Key))// Panel.DesiredSize.Height)
                     {
-                        if (offset + item.Value.Container.ContainerControl.DesiredSize.Height <= 248.8)
+                        if (offset + item.Value.Container.ContainerControl.DesiredSize.Height <= _scrollContentPresenter.DesiredSize.Height)
                             last = item.Key;
                         else
                             last = item.Key - 1;
                     }
                 }
             }
-            System.Console.WriteLine($"LastInView02 {last}");
+            PdmLogger.Log(3, PdmLogger.IndentEnum.Nothing, $"LastInView02 {scrollPos} {last}");
             return last + 1 - (int)scrollPos;
         }
-        class RealizedLookup
-        {
-            public List<int> Indexes { get; set; } = new List<int>();
-            public int LastInFullView { get; set; }
-            public double RelativeOffset { get; set; }
-        }
+        //class RealizedLookup
+        //{
+        //    public List<int> Indexes { get; set; } = new List<int>();
+        //    public int LastInFullView { get; set; }
+        //    public double RelativeOffset { get; set; }
+        //}
         class RealizedItemInfo
         {
-            public ItemContainerInfo Container { get; set; }
+            public WeakReference<ItemContainerInfo> _container { get; set; }
+            public ItemContainerInfo Container => GetContainer();
+
+            public void Set(ItemContainerInfo container)
+            {
+                _container = new WeakReference<ItemContainerInfo>(container);
+            }
+            private ItemContainerInfo GetContainer()
+            {
+                _container.TryGetTarget(out var container);
+                return container;
+            }
+
             public double RelativeOffset { get; set; }
         }
+
     }
 
 }
