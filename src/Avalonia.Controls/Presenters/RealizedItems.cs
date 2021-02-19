@@ -197,7 +197,7 @@ namespace Avalonia.Controls.Presenters
             }
         }
 
-        internal void AddGroup(RealizedItemsInfo info, object vm, IItemContainerGenerator generator, int scrollPos)
+        internal void AddGroup(RealizedItemsInfo info, IItemContainerGenerator generator, int scrollPos)
         {
             var previousNumInfullView = NumInFullView;
             RemoveOld();

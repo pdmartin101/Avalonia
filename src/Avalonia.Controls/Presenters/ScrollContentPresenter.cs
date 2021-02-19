@@ -437,7 +437,7 @@ namespace Avalonia.Controls.Presenters
 
                 if (Extent.Height > Viewport.Height)
                 {
-                    double height = scrollable!.ScrollSize.Height;
+                    double height = isLogical ? scrollable!.ScrollSize.Height : 50;
                     y += -e.Delta.Y * height;
                     y = Math.Max(y, 0);
                     y = Math.Min(y, Extent.Height - Viewport.Height);

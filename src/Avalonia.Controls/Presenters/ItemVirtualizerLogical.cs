@@ -84,7 +84,7 @@ namespace Avalonia.Controls.Presenters
                     control.Arrange(new Rect(new Point(startOffset, 0), new Size(control.DesiredSize.Width, finalSize.Height)));
             }
             Owner.Panel.Arrange(new Rect(finalSize));
-            GroupControl.AddGroup(_realizedChildren._info,Items, Owner.ItemContainerGenerator, (int)_scrollViewer.Offset.Y);
+            GroupControl.AddGroup(_realizedChildren._info, Owner.ItemContainerGenerator, (int)_scrollViewer.Offset.Y);
             PdmLogger.Log(2,PdmLogger.IndentEnum.Nothing, $"Arranging {GroupControl.NumInFullView}");
             if (Items is GroupingView)
             {
